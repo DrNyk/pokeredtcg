@@ -3,7 +3,7 @@
 	db 105, 105,  75,  50,  65
 	;   hp  atk  def  spd  spc
 
-	db POISON, POISON ; type
+	tcgtype DARK, FIGHTING, NULL_TYPE ; type
 	db 75 ; catch rate
 	db 157 ; base exp
 

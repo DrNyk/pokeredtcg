@@ -1833,6 +1833,29 @@ DrawPlayerHUDAndHPBar:
 	ld de, wLoadedMonLevel
 	ld bc, wBattleMonPP - wBattleMonLevel
 	call CopyData
+	hlcoord 10, 8
+	ld a, 'W'
+	ld [hli], a
+	ld a, [wBattleMonType2]
+	and $f0
+	jr z, .skipweaknessprinting
+	swap a
+	add $BF
+	ld [hl], a ; we could skip this so don't adjust hl
+.skipweaknessprinting
+	inc hl
+	ld a, 'R'
+	ld [hli], a
+	ld a, [wBattleMonType2]
+	and $0f
+	jr z, .skipresistanceprinting
+	add $BF
+	ld [hl], a
+.skipresistanceprinting
+	hlcoord 9, 7
+	ld a, [wBattleMonType1]
+	add $BF
+	ld [hl], a
 	hlcoord 14, 8
 	push hl
 	inc hl
@@ -1885,6 +1908,32 @@ DrawEnemyHUDAndHPBar:
 	call CenterMonName
 	call PlaceString
 	hlcoord 4, 1
+	push hl
+	hlcoord 0, 1
+	ld a, 'W'
+	ld [hli], a
+	ld a, [wEnemyMonType2]
+	and $f0
+	jr z, .skipweaknessprinting
+	swap a
+	add $BF
+	ld [hl], a ; could skip this, so we don't adjust hl
+.skipweaknessprinting
+	inc hl
+	ld a, 'R'
+	ld [hli], a
+	ld a, [wEnemyMonType2]
+	and $0f
+	jr z, .skipresistanceprinting
+	add $BF
+	ld [hl], a
+.skipresistanceprinting
+	hlcoord 0, 0
+	ld a, [wEnemyMonType1]
+	add $BF
+	ld [hl], a
+	hlcoord 14, 8
+	pop hl
 	push hl
 	inc hl
 	ld de, wEnemyMonStatus
@@ -2899,7 +2948,7 @@ PrintMenuItem:
 	lb bc, 1, 2
 	call PrintNumber
 	call GetCurrentMove
-	hlcoord 2, 10
+	hlcoord 1, 10
 	predef PrintMoveType
 .moveDisabled
 	ld a, $1
@@ -4037,9 +4086,11 @@ GetDamageVarsForPlayerAttack:
 	and a
 	ld d, a ; d = move power
 	ret z ; return if move power is zero
-	ld a, [hl] ; a = [wPlayerMoveType]
-	cp SPECIAL ; types >= SPECIAL are all special
-	jr nc, .specialAttack
+	ld a, [hl] ; a = [wPlayerMoveType] ; a holds the number value of the type
+	;00nn 00tt
+	and $f0 ; 1111 0000
+	swap a ; 0000 00nn
+	jr nz, .specialAttack
 ; physical attack
 	ld hl, wEnemyMonDefense
 	ld a, [hli]
@@ -4150,9 +4201,11 @@ GetDamageVarsForEnemyAttack:
 	ld d, a ; d = move power
 	and a
 	ret z ; return if move power is zero
-	ld a, [hl] ; a = [wEnemyMoveType]
-	cp SPECIAL ; types >= SPECIAL are all special
-	jr nc, .specialAttack
+	ld a, [hl] ; a = [wEnemyMoveType] ; a holds the number value of the type
+	;00nn 00tt
+	and $f0 ; 1111 0000
+	swap a ; 0000 00nn
+	jr nz, .specialAttack
 ; physical attack
 	ld hl, wBattleMonDefense
 	ld a, [hli]
@@ -5074,15 +5127,16 @@ IncrementMovePP:
 ; function to adjust the base damage of an attack to account for type effectiveness
 AdjustDamageForMoveType:
 ; values for player turn
-	ld hl, wBattleMonType
-	ld a, [hli]
-	ld b, a    ; b = type 1 of attacker
-	ld c, [hl] ; c = type 2 of attacker
+	ld hl, wBattleMonType ; our actual type, may be left alone
+	ld a, [hli] 
+	ld b, a    ; b = our actual type
+	ld c, [hl] ; c = now has our relations in it
 	ld hl, wEnemyMonType
 	ld a, [hli]
-	ld d, a    ; d = type 1 of defender
-	ld e, [hl] ; e = type 2 of defender
+	ld d, a    ; d = our actual type
+	ld e, [hl] ; e = relations
 	ld a, [wPlayerMoveType]
+	and $0f
 	ld [wMoveType], a
 	ldh a, [hWhoseTurn]
 	and a
@@ -5090,13 +5144,14 @@ AdjustDamageForMoveType:
 ; values for enemy turn
 	ld hl, wEnemyMonType
 	ld a, [hli]
-	ld b, a    ; b = type 1 of attacker
-	ld c, [hl] ; c = type 2 of attacker
+	ld b, a    ; actual type
+	ld c, [hl] ; relations
 	ld hl, wBattleMonType
 	ld a, [hli]
-	ld d, a    ; d = type 1 of defender
-	ld e, [hl] ; e = type 2 of defender
+	ld d, a    ; actual type
+	ld e, [hl] ; relations
 	ld a, [wEnemyMoveType]
+	and $0f
 	ld [wMoveType], a
 .next
 	ld a, [wMoveType]
@@ -5126,19 +5181,26 @@ AdjustDamageForMoveType:
 .skipSameTypeAttackBonus
 	ld a, [wMoveType]
 	ld b, a
-	ld hl, TypeEffects
-.loop
-	ld a, [hli] ; a = "attacking type" of the current type pair
-	cp $ff
-	jr z, .done
-	cp b ; does move type match "attacking type"?
-	jr nz, .nextTypePair
-	ld a, [hl] ; a = "defending type" of the current type pair
-	cp d ; does type 1 of defender match "defending type"?
+
+; b = type of the attack
+; c = relations of the attacker
+; d = type of the target
+; e = relations of the target
+
+; water attack against charmander
+
+	ld a, e ; e is our relations
+	and $0f ; look at just the resistance
+	cp b
+	ld d, 5 ; not very effective
 	jr z, .matchingPairFound
-	cp e ; does type 2 of defender match "defending type"?
+	ld a, e
+	and $f0
+	swap a ; look at just the weakness
+	cp b
+	ld d, 20 ; super effective
 	jr z, .matchingPairFound
-	jr .nextTypePair
+	ld d, 10 ; no type relations apply
 .matchingPairFound
 ; if the move type matches the "attacking type" and one of the defender's types matches the "defending type"
 	push hl
@@ -5147,7 +5209,7 @@ AdjustDamageForMoveType:
 	ld a, [wDamageMultipliers]
 	and 1 << BIT_STAB_DAMAGE
 	ld b, a
-	ld a, [hl] ; a = damage multiplier
+	ld a, d ; a = damage multiplier
 	ldh [hMultiplier], a
 	add b
 	ld [wDamageMultipliers], a
@@ -5177,10 +5239,6 @@ AdjustDamageForMoveType:
 .skipTypeImmunity
 	pop bc
 	pop hl
-.nextTypePair
-	inc hl
-	inc hl
-	jp .loop
 .done
 	ret
 
@@ -5192,37 +5250,27 @@ AdjustDamageForMoveType:
 AIGetTypeEffectiveness:
 	ld a, [wEnemyMoveType]
 	ld d, a                    ; d = type of enemy move
-	ld hl, wBattleMonType
-	ld b, [hl]                 ; b = type 1 of player's pokemon
-	inc hl
-	ld c, [hl]                 ; c = type 2 of player's pokemon
-	; initialize to neutral effectiveness
-	ld a, $10 ; bug: should be EFFECTIVE (10)
-	ld [wTypeEffectiveness], a
-	ld hl, TypeEffects
-.loop
-	ld a, [hli]
-	cp $ff
-	ret z
-	cp d                      ; match the type of the move
-	jr nz, .nextTypePair1
-	ld a, [hli]
-	cp b                      ; match with type 1 of pokemon
-	jr z, .done
-	cp c                      ; or match with type 2 of pokemon
-	jr z, .done
-	jr .nextTypePair2
-.nextTypePair1
-	inc hl
-.nextTypePair2
-	inc hl
-	jr .loop
-.done
+	ld hl, wBattleMonType+1 ; relations
+	ld a, [hl]                 
+	and $f0 ; weakness
+	swap a ; on the lower nibble
+	ld b, a ; now b = weakness
 	ld a, [hl]
-	ld [wTypeEffectiveness], a ; store damage multiplier
+	and $0f ; resistance
+	ld c, a ; now c = resistance
+
+	ld hl, wTypeEffectiveness
+	ld a, d
+	cp b
+	ld [hl], 20
+	ret z ; if you decided to encode the same type for weakness and resistance, it will act as the mon is weak to the attack. It doesn't neutralize. Use type null in your base stats configuration
+	cp c
+	ld [hl], 5
+	ret z
+	ld [hl], 10
 	ret
 
-INCLUDE "data/types/type_matchups.asm"
+;INCLUDE "data/types/type_matchups.asm"
 
 ; some tests that need to pass for a move to hit
 MoveHitTest:
@@ -6618,12 +6666,7 @@ HandleExplodingAnimation:
 	ld a, [de]
 	bit INVULNERABLE, a ; fly/dig
 	ret nz
-	ld a, [hli]
-	cp GHOST
-	ret z
-	ld a, [hl]
-	cp GHOST
-	ret z
+	inc hl ; not sure if it matters, but vanilla would have increased this value to point to Type2 of target
 	ld a, [wMoveMissed]
 	and a
 	ret nz

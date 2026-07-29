@@ -12,17 +12,17 @@ ParalyzeEffect_:
 	jr nz, .didntAffect
 ; check if the target is immune due to types
 	ld a, [de]
-	cp ELECTRIC
+	cp LIGHTNING
 	jr nz, .hitTest
 	ld b, h
 	ld c, l
 	inc bc
 	ld a, [bc]
-	cp GROUND
+	cp FIGHTING
 	jr z, .doesntAffect
 	inc bc
 	ld a, [bc]
-	cp GROUND
+	cp FIGHTING
 	jr z, .doesntAffect
 .hitTest
 	push hl

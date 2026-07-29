@@ -3,7 +3,7 @@
 	db  30,  35,  30,  80, 100
 	;   hp  atk  def  spd  spc
 
-	db GHOST, POISON ; type
+	tcgtype PSYCHIC_TYPE, NULL_TYPE, FIGHTING
 	db 190 ; catch rate
 	db 95 ; base exp
 

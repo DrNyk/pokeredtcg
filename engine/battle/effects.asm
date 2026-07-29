@@ -90,12 +90,6 @@ PoisonEffect:
 	ld b, a
 	and a
 	jr nz, .noEffect ; miss if target is already statused
-	ld a, [hli]
-	cp POISON ; can't poison a poison-type target
-	jr z, .noEffect
-	ld a, [hld]
-	cp POISON ; can't poison a poison-type target
-	jr z, .noEffect
 	ld a, [de]
 	cp POISON_SIDE_EFFECT1
 	ld b, 20 percent + 1 ; chance of poisoning

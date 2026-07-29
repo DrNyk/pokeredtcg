@@ -3,7 +3,7 @@
 	db  63,  60,  55,  71,  50
 	;   hp  atk  def  spd  spc
 
-	db NORMAL, FLYING ; type
+	tcgtype COLORLESS, LIGHTNING, FIGHTING
 	db 120 ; catch rate
 	db 113 ; base exp
 

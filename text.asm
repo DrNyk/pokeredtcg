@@ -271,6 +271,10 @@ INCLUDE "data/text/text_7.asm"
 SECTION "Pokédex Text", ROMX
 
 INCLUDE "data/pokemon/dex_text.asm"
+REPT $7C7
+	db 00
+ENDR
+	db 20
 
 
 SECTION "Move Names", ROMX

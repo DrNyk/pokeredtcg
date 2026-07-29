@@ -3,7 +3,7 @@
 	db  80,  85,  95,  25,  30
 	;   hp  atk  def  spd  spc
 
-	db GROUND, ROCK ; type
+	tcgtype FIGHTING, GRASS, LIGHTNING
 	db 120 ; catch rate
 	db 135 ; base exp
 

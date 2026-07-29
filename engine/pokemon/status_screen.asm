@@ -144,7 +144,7 @@ StatusScreen:
 	ld de, wPokedexNum
 	lb bc, LEADING_ZEROES | 1, 3
 	call PrintNumber ; Pokémon no.
-	hlcoord 11, 10
+	hlcoord 10, 10
 	predef PrintMonType
 	ld hl, NamePointers2
 	call .GetStringPointer
@@ -158,7 +158,7 @@ StatusScreen:
 	ld e, l
 	hlcoord 12, 16
 	call PlaceString ; OT
-	hlcoord 12, 14
+	hlcoord 13, 15
 	ld de, wLoadedMonOTID
 	lb bc, LEADING_ZEROES | 2, 5
 	call PrintNumber ; ID Number
@@ -203,10 +203,10 @@ NamePointers2:
 	dw wDayCareMonName
 
 TypesIDNoOTText:
-	db   "TYPE1/"
-	next "TYPE2/"
-	next "<ID>№/"
-	next "OT/"
+	db   "TYPE:"
+	next "WEAK:"
+	next "RESIST:"
+	next "OT/" ; IDNo follows on this same line
 	next "@"
 
 StatusText:

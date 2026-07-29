@@ -1,9 +1,10 @@
+
 	db DEX_SPEAROW ; pokedex id
 
 	db  40,  60,  30,  70,  31
 	;   hp  atk  def  spd  spc
 
-	db NORMAL, FLYING ; type
+	tcgtype COLORLESS, LIGHTNING, FIGHTING
 	db 255 ; catch rate
 	db 58 ; base exp
 

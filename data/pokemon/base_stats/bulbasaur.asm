@@ -3,7 +3,7 @@
 	db  45,  49,  49,  45,  65
 	;   hp  atk  def  spd  spc
 
-	db GRASS, POISON ; type
+	tcgtype GRASS, FIRE, NULL_TYPE
 	db 45 ; catch rate
 	db 64 ; base exp
 

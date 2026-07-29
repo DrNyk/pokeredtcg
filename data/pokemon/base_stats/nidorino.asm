@@ -3,7 +3,7 @@
 	db  61,  72,  57,  65,  55
 	;   hp  atk  def  spd  spc
 
-	db POISON, POISON ; type
+	tcgtype GRASS, PSYCHIC_TYPE, NULL_TYPE
 	db 120 ; catch rate
 	db 118 ; base exp
 

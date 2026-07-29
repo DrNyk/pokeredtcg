@@ -3,7 +3,7 @@
 	db  90, 100,  90,  90, 125
 	;   hp  atk  def  spd  spc
 
-	db FIRE, FLYING ; type
+	tcgtype FIRE, NULL_TYPE, FIGHTING ; type
 	db 3 ; catch rate
 	db 217 ; base exp
 

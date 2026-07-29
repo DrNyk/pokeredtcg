@@ -93,3 +93,8 @@ MACRO? dname
 	db \1
 	ds n - CHARLEN(\1), '@'
 ENDM
+
+MACRO tcgtype
+	db \1
+	db ((\2) << 4) | (\3)
+ENDM

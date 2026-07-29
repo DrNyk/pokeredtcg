@@ -3,7 +3,7 @@
 	db  41,  64,  45,  50,  50
 	;   hp  atk  def  spd  spc
 
-	db DRAGON, DRAGON ; type
+	tcgtype COLORLESS, NULL_TYPE, PSYCHIC_TYPE
 	db 45 ; catch rate
 	db 67 ; base exp
 
