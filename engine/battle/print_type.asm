@@ -31,6 +31,7 @@ PrintMonType:
 	ld [hl], a
 	pop hl
 .dontprintweakness
+	ld bc, SCREEN_WIDTH * 2 ; bc is trashed by PrintType, so restoring it
 	add hl, bc ; gets us down to the resistance line
 	ld a, [wMonHType2]
 	and $0f
