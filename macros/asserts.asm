@@ -1,5 +1,4 @@
 ; Macros to verify assumptions about the data or code
-
 MACRO? _redef_current_label
 	IF DEF(\1)
 		PURGE \1

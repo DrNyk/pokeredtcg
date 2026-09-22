@@ -3,7 +3,7 @@
 	db 100, 100, 100, 100, 100
 	;   hp  atk  def  spd  spc
 
-	tcgtype PSYCHIC_TYPE, PSYCHIC_TYPE, NULL_TYPE ; type
+	tcgtype 1, PSYCHIC_TYPE, PSYCHIC_TYPE, NULL_TYPE ; type
 	db 45 ; catch rate
 	db 64 ; base exp
 

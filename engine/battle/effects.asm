@@ -25,18 +25,16 @@ INCLUDE "data/moves/effects_pointers.asm"
 
 SleepEffect:
 	ld de, wEnemyMonStatus
-	ld bc, wEnemyBattleStatus2
+	ld hl, wEnemyBattleStatus2
 	ldh a, [hWhoseTurn]
 	and a
 	jp z, .sleepEffect
 	ld de, wBattleMonStatus
-	ld bc, wPlayerBattleStatus2
+	ld hl, wPlayerBattleStatus2
 
 .sleepEffect
-	ld a, [bc]
-	bit NEEDS_TO_RECHARGE, a ; does the target need to recharge? (hyper beam)
-	res NEEDS_TO_RECHARGE, a ; target no longer needs to recharge
-	ld [bc], a
+	bit NEEDS_TO_RECHARGE, [hl] ; does the target need to recharge? (hyper beam)
+	res NEEDS_TO_RECHARGE, [hl] ; target no longer needs to recharge
 	jr nz, .setSleepCounter ; if the target had to recharge, all hit tests will be skipped
 	                        ; including the event where the target already has another status
 	ld a, [de]
@@ -63,7 +61,7 @@ SleepEffect:
 	ld [de], a
 	call PlayCurrentMoveAnimation2
 	ld hl, FellAsleepText
-	jp PrintText
+	jr PoisonEffect.PrintTextLaunchPoint
 .didntAffect
 	jp PrintDidntAffectText
 
@@ -142,10 +140,11 @@ PoisonEffect:
 	jr z, .regularPoisonEffect
 	ld a, b
 	call PlayBattleAnimation2
+.PrintTextLaunchPoint
 	jp PrintText
 .regularPoisonEffect
 	call PlayCurrentMoveAnimation2
-	jp PrintText
+	jr .PrintTextLaunchPoint
 .noEffect
 	ld a, [de]
 	cp POISON_EFFECT
@@ -198,7 +197,8 @@ FreezeBurnParalyzeEffect:
 	jp nz, CheckDefrost ; can't inflict status if opponent is already statused
 	ld a, [wPlayerMoveType]
 	ld b, a
-	ld a, [wEnemyMonType1]
+	ld a, [wEnemyMonType1] 
+	and $07 ; drops the retreat cost
 	cp b ; do target type 1 and move type match?
 	ret z  ; return if they match (an ice move can't freeze an ice-type, body slam can't paralyze a normal-type, etc.)
 	ld a, [wEnemyMonType2]
@@ -238,7 +238,7 @@ FreezeBurnParalyzeEffect:
 	ld a, ENEMY_HUD_SHAKE_ANIM
 	call PlayBattleAnimation
 	ld hl, BurnedText
-	jp PrintText
+	jr .PrintTextLaunchPoint
 .freeze1
 	call ClearHyperBeam ; resets hyper beam (recharge) condition from target
 	ld a, 1 << FRZ
@@ -246,6 +246,7 @@ FreezeBurnParalyzeEffect:
 	ld a, ENEMY_HUD_SHAKE_ANIM
 	call PlayBattleAnimation
 	ld hl, FrozenText
+.PrintTextLaunchPoint
 	jp PrintText
 .opponentAttacker
 	ld a, [wBattleMonStatus] ; mostly same as above with addresses swapped for opponent
@@ -253,7 +254,8 @@ FreezeBurnParalyzeEffect:
 	jp nz, CheckDefrost
 	ld a, [wEnemyMoveType]
 	ld b, a
-	ld a, [wBattleMonType1]
+	ld a, [wBattleMonType1] 
+	and $07 ; drops the retreat cost
 	cp b
 	ret z
 	ld a, [wBattleMonType2]
@@ -287,13 +289,13 @@ FreezeBurnParalyzeEffect:
 	ld [wBattleMonStatus], a
 	call HalveAttackDueToBurn
 	ld hl, BurnedText
-	jp PrintText
+	jr .PrintTextLaunchPoint
 .freeze2
 ; hyper beam bits aren't reset for opponent's side
 	ld a, 1 << FRZ
 	ld [wBattleMonStatus], a
 	ld hl, FrozenText
-	jp PrintText
+	jr .PrintTextLaunchPoint
 
 BurnedText:
 	text_far _BurnedText
@@ -545,10 +547,10 @@ StatModifierDownEffect:
 	jr z, .statModifierDownEffect
 	call BattleRandom
 	cp 25 percent + 1 ; chance to miss by in regular battle
-	jp c, MoveMissed
+	jp c, MoveMissed ; not sure I can rely on this being nz for the _LaunchPoint
 .statModifierDownEffect
 	call CheckTargetSubstitute ; can't hit through substitute
-	jp nz, MoveMissed
+	jr nz, .MoveMissed_LaunchPoint
 	ld a, [de]
 	cp ATTACK_DOWN_SIDE_EFFECT
 	jr c, .nonSideEffect
@@ -568,9 +570,10 @@ StatModifierDownEffect:
 	pop hl
 	ld a, [wMoveMissed]
 	and a
-	jp nz, MoveMissed
+	jr nz, .MoveMissed_LaunchPoint
 	ld a, [bc]
 	bit INVULNERABLE, a ; fly/dig
+.MoveMissed_LaunchPoint ; needs to be nz
 	jp nz, MoveMissed
 	ld a, [de]
 	sub ATTACK_DOWN1_EFFECT
@@ -623,7 +626,7 @@ StatModifierDownEffect:
 	jr nz, .recalculateStat
 	ld a, [hl]
 	and a
-	jp z, CantLowerAnymore_Pop
+	jr z, CantLowerAnymore_Pop
 .recalculateStat
 ; recalculate affected stat
 ; paralysis and burn penalties, as well as badge boosts are ignored
@@ -655,7 +658,7 @@ StatModifierDownEffect:
 	ld b, a
 	ldh a, [hProduct + 2]
 	or b
-	jp nz, UpdateLoweredStat
+	jr nz, UpdateLoweredStat
 	ldh [hMultiplicand + 1], a
 	ld a, $1
 	ldh [hMultiplicand + 2], a
@@ -829,7 +832,7 @@ SwitchAndTeleportEffect:
 	ld a, [wPlayerMoveNum]
 	cp TELEPORT
 	jp nz, PrintDidntAffectText
-	jp PrintButItFailedText_
+	jr .PrintBuitItFailedText_LaunchPoint
 .playerMoveWasSuccessful
 	call ReadPlayerMonCurHPAndStatus
 	xor a
@@ -844,7 +847,8 @@ SwitchAndTeleportEffect:
 	ld hl, IsUnaffectedText
 	ld a, [wPlayerMoveNum]
 	cp TELEPORT
-	jp nz, PrintText
+	jr nz, .printText
+.PrintBuitItFailedText_LaunchPoint
 	jp PrintButItFailedText_
 .handleEnemy
 	ld a, [wIsInBattle]
@@ -871,7 +875,7 @@ SwitchAndTeleportEffect:
 	ld a, [wEnemyMoveNum]
 	cp TELEPORT
 	jp nz, PrintDidntAffectText
-	jp PrintButItFailedText_
+	jr .PrintBuitItFailedText_LaunchPoint
 .enemyMoveWasSuccessful
 	call ReadPlayerMonCurHPAndStatus
 	xor a
@@ -886,7 +890,7 @@ SwitchAndTeleportEffect:
 	ld hl, IsUnaffectedText
 	ld a, [wEnemyMoveNum]
 	cp TELEPORT
-	jp nz, PrintText
+	jr nz, .printText
 	jp ConditionalPrintButItFailed
 .playAnimAndPrintText
 	push af
@@ -1262,6 +1266,7 @@ MimicEffect:
 	call GetMoveName
 	call PlayCurrentMoveAnimation
 	ld hl, MimicLearnedMoveText
+.PrintTextJumpPoint ; MimicEffect.PrintTextJumpPoint
 	jp PrintText
 .mimicMissed
 	jp PrintButItFailedText_
@@ -1295,7 +1300,7 @@ DisableEffect:
 	and a
 	jr nz, .moveMissed
 .pickMoveToDisable
-	push hl
+	push hl ; if we have to retry for a random move, we need to start at the top of the array.
 	call BattleRandom
 	and $3
 	ld c, a
@@ -1306,34 +1311,34 @@ DisableEffect:
 	and a
 	jr z, .pickMoveToDisable ; loop until a non-00 move slot is found
 	ld [wNamedObjectIndex], a ; store move number
-	push hl
-	ldh a, [hWhoseTurn]
-	and a
-	ld hl, wBattleMonPP
-	jr nz, .enemyTurn
-	ld a, [wLinkState]
-	cp LINK_STATE_BATTLING
-	pop hl ; wEnemyMonMoves
-	jr nz, .playerTurnNotLinkBattle
-; player's turn, Link Battle
-	push hl
-	ld hl, wEnemyMonPP
-.enemyTurn
-	push hl
-	ld a, [hli]
-	or [hl]
-	inc hl
-	or [hl]
-	inc hl
-	or [hl]
-	and PP_MASK
-	pop hl ; wBattleMonPP or wEnemyMonPP
-	jr z, .moveMissedPopHL ; nothing to do if all moves have no PP left
-	add hl, bc
-	ld a, [hl]
-	pop hl
-	and a
-	jr z, .pickMoveToDisable ; pick another move if this one had 0 PP
+	; push hl
+	; ldh a, [hWhoseTurn]
+	; and a
+	; ld hl, wBattleMonPP
+	; jr nz, .enemyTurn
+	; ld a, [wLinkState]
+	; cp LINK_STATE_BATTLING
+	; pop hl ; wEnemyMonMoves
+	; jr nz, .playerTurnNotLinkBattle
+; ; player's turn, Link Battle
+	; push hl
+	; ld hl, wEnemyMonPP
+; .enemyTurn
+	; ; push hl
+	; ; ld a, [hli]
+	; ; or [hl]
+	; ; inc hl
+	; ; or [hl]
+	; ; inc hl
+	; ; or [hl]
+	; ; and PP_MASK
+	; ; pop hl ; wBattleMonPP or wEnemyMonPP
+	; ; jr z, .moveMissedPopHL ; nothing to do if all moves have no PP left
+	; add hl, bc
+	; ld a, [hl]
+	; pop hl
+	; ;and a
+	; ;jr z, .pickMoveToDisable ; pick another move if this one had 0 PP
 .playerTurnNotLinkBattle
 ; non-link battle enemies have unlimited PP so the previous checks aren't needed
 	call BattleRandom
@@ -1354,7 +1359,7 @@ DisableEffect:
 	ld [hl], a
 	call GetMoveName
 	ld hl, MoveWasDisabledText
-	jp PrintText
+	jr MimicEffect.PrintTextJumpPoint
 .moveMissedPopHL
 	pop hl
 .moveMissed
@@ -1388,7 +1393,7 @@ NothingHappenedText:
 
 PrintNoEffectText:
 	ld hl, NoEffectText
-	jp PrintText
+	jr PrintMayNotAttackText.PrintTextLaunchPoint
 
 NoEffectText:
 	text_far _NoEffectText
@@ -1401,7 +1406,7 @@ ConditionalPrintButItFailed:
 
 PrintButItFailedText_:
 	ld hl, ButItFailedText
-	jp PrintText
+	jr PrintMayNotAttackText.PrintTextLaunchPoint
 
 ButItFailedText:
 	text_far _ButItFailedText
@@ -1409,7 +1414,7 @@ ButItFailedText:
 
 PrintDidntAffectText:
 	ld hl, DidntAffectText
-	jp PrintText
+	jr PrintMayNotAttackText.PrintTextLaunchPoint
 
 DidntAffectText:
 	text_far _DidntAffectText
@@ -1421,6 +1426,7 @@ IsUnaffectedText:
 
 PrintMayNotAttackText:
 	ld hl, ParalyzedMayNotAttackText
+.PrintTextLaunchPoint
 	jp PrintText
 
 ParalyzedMayNotAttackText:

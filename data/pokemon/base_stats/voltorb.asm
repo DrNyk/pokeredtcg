@@ -3,7 +3,7 @@
 	db  40,  30,  50, 100,  55
 	;   hp  atk  def  spd  spc
 
-	tcgtype LIGHTNING, FIGHTING, NULL_TYPE
+	tcgtype 1, LIGHTNING, FIGHTING, NULL_TYPE
 	db 190 ; catch rate
 	db 103 ; base exp
 

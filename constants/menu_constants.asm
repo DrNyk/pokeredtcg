@@ -20,15 +20,15 @@ DEF PC_ITEM_CAPACITY  EQU 50
 	const MONEY_BOX_TEMPLATE                ; $0f
 	const MENU_TEMPLATE_10                  ; $10 unused
 	const MON_SPRITE_POPUP                  ; $11
-	const JP_AH_MENU_TEMPLATE               ; $12
+	const_skip					             ; $12
 	const MONEY_BOX                         ; $13
 	const TWO_OPTION_MENU                   ; $14
 	const BUY_SELL_QUIT_MENU                ; $15
 	const_skip                              ; $16
 	const_skip                              ; $17
 	const_skip                              ; $18
-	const_skip                              ; $19
-	const JP_POKEDEX_MENU_TEMPLATE          ; $1a
+	const JP_AH_MENU_TEMPLATE               ; $19
+	const ENERGY_DISCARD_MENU_TEMPLATE          ; $1a
 	const SAFARI_BATTLE_MENU_TEMPLATE       ; $1b
 
 ; two option menu constants
@@ -71,6 +71,7 @@ DEF CHOSE_SECOND_ITEM EQU 2
 	const TMHM_PARTY_MENU      ; $03
 	const SWAP_MONS_PARTY_MENU ; $04
 	const EVO_STONE_PARTY_MENU ; $05
+	const ATTACH_ENERGY_MENU ; $06
 ; party menu message IDs
 ; PartyMenuItemUseMessagePointers indexes (see engine/menus/party_menu.asm)
 	const_next $F0

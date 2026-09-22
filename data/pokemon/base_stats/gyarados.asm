@@ -3,7 +3,7 @@
 	db  95, 125,  79,  81, 100
 	;   hp  atk  def  spd  spc
 
-	tcgtype WATER, GRASS, FIGHTING
+	tcgtype 3, WATER, GRASS, FIGHTING
 	db 45 ; catch rate
 	db 214 ; base exp
 

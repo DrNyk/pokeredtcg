@@ -128,8 +128,8 @@ _ItemfinderFoundNothingText::
 	prompt
 
 _RaisePPWhichTechniqueText::
-	text "Raise PP of which"
-	line "technique?"
+	text "Prime energy of"
+	line "which technique?"
 	done
 
 _RestorePPWhichTechniqueText::
@@ -139,14 +139,24 @@ _RestorePPWhichTechniqueText::
 
 _PPMaxedOutText::
 	text_ram wStringBuffer
-	text "'s PP"
-	line "is maxed out."
+	text " is"
+	line "already primed."
 	prompt
+	
+_PPChangePrimingText::
+	text_ram wNameBuffer
+	text " is"
+	line "currently primed."
+	para "Make @"
+	text_ram wStringBuffer
+	text_start
+	line "the primed move?"
+	done
 
 _PPIncreasedText::
 	text_ram wStringBuffer
-	text "'s PP"
-	line "increased."
+	text " is"
+	line "now primed."
 	prompt
 
 _PPRestoredText::

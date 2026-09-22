@@ -3,7 +3,7 @@
 	db  90,  85, 100,  85, 125
 	;   hp  atk  def  spd  spc
 
-	tcgtype WATER, NULL_TYPE, FIGHTING
+	tcgtype 2, WATER, NULL_TYPE, FIGHTING
 	db 3 ; catch rate
 	db 215 ; base exp
 

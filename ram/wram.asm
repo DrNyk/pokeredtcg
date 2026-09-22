@@ -2246,7 +2246,9 @@ ENDR
 wBoxMonNicksEnd::
 
 wBoxDataEnd::
-
+wEnergyGranted::db
+wEnergyStringBuffer::dw
+ds 8 ; reserve 8 more bytes (+4 words) for the wEnergyStringBuffer
 
 SECTION "Stack", WRAM0
 

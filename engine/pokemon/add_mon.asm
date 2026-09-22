@@ -222,7 +222,11 @@ _AddPartyMon::
 	inc de
 	inc de
 	pop hl
-	call AddPartyMon_WriteMovePP
+	;call AddPartyMon_WriteMovePP ; this would do inc de 4 times, plus a fifth one after the loop
+	inc de
+	inc de
+	inc de
+	inc de
 	inc de
 	ld a, [wCurEnemyLevel]
 	ld [de], a
@@ -246,34 +250,35 @@ _AddPartyMon::
 	ret
 
 LoadMovePPs:
-	call GetPredefRegisters
-	; fallthrough
-AddPartyMon_WriteMovePP:
-	ld b, NUM_MOVES
-.pploop
-	ld a, [hli]     ; read move ID
-	and a
-	jr z, .empty
-	dec a
-	push hl
-	push de
-	push bc
-	ld hl, Moves
-	ld bc, MOVE_LENGTH
-	call AddNTimes
-	ld de, wMoveData
-	ld a, BANK(Moves)
-	call FarCopyData
-	pop bc
-	pop de
-	pop hl
-	ld a, [wMoveData + MOVE_PP]
-.empty
-	inc de
-	ld [de], a
-	dec b
-	jr nz, .pploop ; there are still moves to read
 	ret
+	; call GetPredefRegisters
+	; ; fallthrough
+; AddPartyMon_WriteMovePP:
+	; ld b, NUM_MOVES
+; .pploop
+	; ld a, [hli]     ; read move ID
+	; and a
+	; jr z, .empty
+	; dec a
+	; push hl
+	; push de
+	; push bc
+	; ld hl, Moves
+	; ld bc, MOVE_LENGTH
+	; call AddNTimes
+	; ld de, wMoveData
+	; ld a, BANK(Moves)
+	; call FarCopyData
+	; pop bc
+	; pop de
+	; pop hl
+	; ld a, [wMoveData + MOVE_PP]
+; .empty
+	; inc de
+	; ld [de], a
+	; dec b
+	; jr nz, .pploop ; there are still moves to read
+	; ret
 
 ; adds enemy mon [wCurPartySpecies] (at position [wWhichPokemon] in enemy list) to own party
 ; used in the cable club trade center

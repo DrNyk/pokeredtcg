@@ -3,7 +3,7 @@
 	db  65,  70,  60, 115,  65
 	;   hp  atk  def  spd  spc
 
-	tcgtype COLORLESS, FIGHTING, PSYCHIC_TYPE
+	tcgtype 0, COLORLESS, FIGHTING, PSYCHIC_TYPE
 	db 90 ; catch rate
 	db 148 ; base exp
 

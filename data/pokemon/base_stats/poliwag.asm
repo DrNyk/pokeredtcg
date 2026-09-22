@@ -3,7 +3,7 @@
 	db  40,  50,  40,  90,  40
 	;   hp  atk  def  spd  spc
 
-	tcgtype WATER, GRASS, NULL_TYPE
+	tcgtype 1, WATER, GRASS, NULL_TYPE
 	db 255 ; catch rate
 	db 77 ; base exp
 

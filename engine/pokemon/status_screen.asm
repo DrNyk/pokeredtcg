@@ -21,7 +21,16 @@ DrawHP_:
 	xor a
 	ld c, a
 	ld e, a
+	ld a, [wHPBarType]
+	cp $2
+	ld a, $6 ; tile length of the hp bar
+	jr nz, .vanilla_length
+	ld a, [wIsInBattle]
+	and a
 	ld a, $6
+	jr z, .vanilla_length ; we're not in a battle
+	ld a, $2
+.vanilla_length
 	ld d, a
 	jp .drawHPBarAndPrintFraction
 .nonzeroHP
@@ -30,7 +39,16 @@ DrawHP_:
 	ld a, [wLoadedMonMaxHP + 1]
 	ld e, a
 	predef HPBarLength
+	ld a, [wHPBarType]
+	cp $2
 	ld a, $6
+	jr nz, .vanilla_length2
+	ld a, [wIsInBattle]
+	and a
+	ld a, $6
+	jr z, .vanilla_length2 ; we're not in a battle
+	ld a, $2
+.vanilla_length2
 	ld d, a
 	ld c, a
 .drawHPBarAndPrintFraction
@@ -40,6 +58,13 @@ DrawHP_:
 	push hl
 	call DrawHPBar
 	pop hl
+	ld a, [wHPBarType]
+	cp $2
+	jr nz, .vanilla ; we don't have any numbers to print if it's wHPBarType = 2 AND if we're in battle
+	ld a, [wIsInBattle]
+	and a
+	jr nz, .earlyExit ; we're in a battle
+.vanilla
 	ldh a, [hUILayoutFlags]
 	bit BIT_PARTY_MENU_HP_BAR, a
 	jr z, .printFractionBelowBar
@@ -57,6 +82,7 @@ DrawHP_:
 	ld de, wLoadedMonMaxHP
 	lb bc, 2, 3
 	call PrintNumber
+	.earlyExit
 	pop hl
 	pop de
 	ret
@@ -111,11 +137,14 @@ StatusScreen:
 	ld [hl], '<DOT>'
 	dec hl
 	ld [hl], '№'
-	hlcoord 19, 9
-	lb bc, 8, 6
+	hlcoord 19, 8
+	lb bc, 9, 7
 	call DrawLineBox ; Draws the box around types, ID No. and OT
-	hlcoord 10, 9
-	ld de, TypesIDNoOTText
+	hlcoord 10, 8
+	ld de, TypesText
+	call PlaceString
+	hlcoord 10, 15
+	ld de, OTText
 	call PlaceString
 	hlcoord 11, 3
 	predef DrawHP
@@ -144,7 +173,7 @@ StatusScreen:
 	ld de, wPokedexNum
 	lb bc, LEADING_ZEROES | 1, 3
 	call PrintNumber ; Pokémon no.
-	hlcoord 10, 10
+	hlcoord 10, 9
 	predef PrintMonType
 	ld hl, NamePointers2
 	call .GetStringPointer
@@ -202,12 +231,15 @@ NamePointers2:
 	dw wBoxMonNicks
 	dw wDayCareMonName
 
-TypesIDNoOTText:
+TypesText:
 	db   "TYPE:"
 	next "WEAK:"
 	next "RESIST:"
-	next "OT/" ; IDNo follows on this same line
+	next "RETREAT:"
 	next "@"
+	
+OTText:
+	db "OT/@" ; IDNo follows on this same line
 
 StatusText:
 	db "STATUS/@"
@@ -333,46 +365,67 @@ StatusScreen2:
 	decoord 14, 10
 	ld b, 0
 .PrintPP
-	ld a, [hli]
-	and a
+	ld a, [hli] ; it's at wLoadedMonMoves, thats $cfa0/1/2/3 .. at /4 is wLoadedMonOTID
+	and a ; this just checks for early termination if less than 4 moves
 	jr z, .PPDone
 	push bc
 	push hl
 	push de
-	ld hl, wCurrentMenuItem
-	ld a, [hl]
-	push af
+	; a is our move index of slot1 to start
+	dec a ; first move is pound at value 1, so that's at slot 0 in the table. This dec a is to offsest that.
+	ld hl, Moves
+	ld bc, MOVE_LENGTH
+	call AddNTimes
+	ld de, wMoveData
+	ld a, BANK(Moves)
+	call FarCopyData
+	; animation ; effect ; power ; physical/special | type2 | type1 ; accuracy ; pp1 | pp2
+	ld de, wMoveData + 3 ; gets me the types with physical/special prefix
+	ld a, [de]
+	and $77 ; this strips the physical/special prefix right out of them
+	ld b, a ; b is going to hold our types
+	inc de
+	inc de
+	ld a, [de]
+	ld c, a ; cache real quick our pps
+	ld h, a ; 
+	swap h
+	ld a, $0f
+	and h
+	ld h, a ; h now holds pp1
+	ld a, $0f
+	and c
+	ld c, a ; c now holds our pp2
 	ld a, b
-	ld [hl], a
-	push hl
-	callfar GetMaxPP
-	pop hl
-	pop af
-	ld [hl], a
-	pop de
-	pop hl
-	push hl
-	ld bc, MON_PP - MON_MOVES - 1
-	add hl, bc
-	ld a, [hl]
-	and PP_MASK
-	ld [wStatusScreenCurrentPP], a
-	ld h, d
-	ld l, e
-	push hl
-	ld de, wStatusScreenCurrentPP
-	lb bc, 1, 2
-	call PrintNumber
-	ld a, '/'
-	ld [hli], a
-	ld de, wMaxPP
-	lb bc, 1, 2
-	call PrintNumber
-	pop hl
-	ld de, SCREEN_WIDTH * 2
+	and $07 ; now it's just type1
+	add $BF ; this is the text character for our type symbol
+	; ah ha, we used decoord to paint the initial PP
+	pop de ; this restores the 14, 10 for our first pp
+	push de
+.printFirstType	
+	ld [de], a
+	inc de
+	dec h
+	jr nz, .printFirstType
+	xor a
+	; now we get ready for the second type
+	or c
+	jr z, .escapeEarly ; there's no second type to print
+	ld a, b
+	swap a
+	and $07 ; now it's just type2
+	add $BF ; this is the text charater for our symbol
+.printSecondType
+	ld [de], a
+	inc de
+	dec c
+	jr nz, .printSecondType
+.escapeEarly
+	pop de ; this restores the 14, 10 for our first PP
+	ld hl, SCREEN_WIDTH * 2
 	add hl, de
 	ld d, h
-	ld e, l
+	ld e, l ; now de points to the next row for PP needs
 	pop hl
 	pop bc
 	inc b

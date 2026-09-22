@@ -3,7 +3,7 @@
 	db  70, 110,  80, 105,  55
 	;   hp  atk  def  spd  spc
 
-	tcgtype GRASS, FIRE, FIGHTING
+	tcgtype 0, GRASS, FIRE, FIGHTING
 	db 45 ; catch rate
 	db 187 ; base exp
 

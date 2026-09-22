@@ -3,7 +3,7 @@
 	db  45,  50,  55,  30,  75
 	;   hp  atk  def  spd  spc
 
-	tcgtype GRASS, FIRE, NULL_TYPE
+	tcgtype 1, GRASS, FIRE, NULL_TYPE
 	db 255 ;
 	db 78 ; base exp
 

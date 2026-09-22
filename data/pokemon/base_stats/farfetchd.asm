@@ -3,7 +3,7 @@
 	db  52,  65,  55,  60,  58
 	;   hp  atk  def  spd  spc
 
-	tcgtype COLORLESS, LIGHTNING, FIGHTING
+	tcgtype 1, COLORLESS, LIGHTNING, FIGHTING
 	db 45 ; catch rate
 	db 94 ; base exp
 

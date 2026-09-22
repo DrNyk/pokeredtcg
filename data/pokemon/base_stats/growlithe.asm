@@ -3,7 +3,7 @@
 	db  55,  70,  45,  60,  50
 	;   hp  atk  def  spd  spc
 
-	tcgtype FIRE, WATER, NULL_TYPE
+	tcgtype 1, FIRE, WATER, NULL_TYPE
 	db 190 ; catch rate
 	db 91 ; base exp
 

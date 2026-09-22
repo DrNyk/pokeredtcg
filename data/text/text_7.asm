@@ -198,3 +198,78 @@ _UsedCutText::
 	text " hacked"
 	line "away with CUT!"
 	prompt
+
+_InsufficientEnergy::
+	text_ram wBattleMonNick
+	text " doesn't"
+	line "have the energy."
+	prompt
+	
+_JustEnoughEnergy::
+	text "Discard @"
+	text_ram wEnergyStringBuffer+3
+	text " energy"
+	line "from @"
+	text_ram wBattleMonNick
+	text "?"
+	prompt
+	
+_ExcessEnergy:: ; removed in revision
+	text_ram wBattleMonNick
+	text " needs @"
+	text_ram wEnergyStringBuffer+3
+	text_start
+	line "energy to switch."
+	cont "Remove @" 
+	text_ram wEnergyStringBuffer
+	text " energy?"
+	done
+
+_NotEnoughEnergy::
+	text "The energy you"
+	line "selected is not"
+	cont "enough to switch."
+	prompt
+
+_DrawnEnergyTextChoice::
+	text "<PLAYER> found"
+	line "@"
+	text_ram wEnergyStringBuffer
+	text " energy!"
+	para "Equip the @"
+	text_ram wEnergyStringBuffer
+	text " energy"
+	line "to which #MON?"
+	prompt
+	
+_DrawnEnergyTextNoChoice::
+	text "<PLAYER> found"
+	line "@"
+	text_ram wEnergyStringBuffer
+	text " energy!"
+	prompt
+	
+_PartyMenuAttachEnergyText::
+	text "Choose a #MON"
+	line "to receive @"
+	text_ram wEnergyStringBuffer
+	text "."
+	done
+	
+_AttachedToBenchText::
+	text_ram wTrainerName
+	text " attached"
+	line "@"
+	text_ram wEnergyStringBuffer
+	text " to the bench."
+	prompt
+	
+_AttachedToActiveText::
+	text_ram wTrainerName
+	text " attached"
+	line "@"
+	text_ram wEnergyStringBuffer
+	text " to @"
+	text_ram wEnemyMonNick
+	text "."
+	prompt

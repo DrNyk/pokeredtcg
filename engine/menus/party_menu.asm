@@ -18,13 +18,13 @@ RedrawPartyMenu_::
 	ldh [hPartyMonIndex], a
 	ld [wWhichPartyMenuHPBar], a
 .loop
-	ld a, [de]
+	ld a, [de] ; this is a separate tracker for the party
 	cp $FF ; reached the terminator?
 	jp z, .afterDrawingMonEntries
 	push bc
 	push de
 	push hl
-	ld a, c
+	ld a, c ; this is like our party species. I can use this for my energy
 	push hl
 	ld hl, wPartyMonNicks
 	call GetPartyMonName
@@ -62,23 +62,28 @@ RedrawPartyMenu_::
 	cp EVO_STONE_PARTY_MENU
 	jr z, .evolutionStoneMenu
 	push hl
-	ld bc, 14 ; 14 columns to the right
-	add hl, bc
-	ld de, wLoadedMonStatus
-	call PrintStatusCondition
-	pop hl
-	push hl
-	ld bc, SCREEN_WIDTH + 1 ; down 1 row and right 1 column
+	ld a, [wIsInBattle]
+	and a
+	ld bc, SCREEN_WIDTH + 1 ; for not in battle
+	jr z, .vanilla
+	ld bc, 13 ; for in battle and viewing party screen where I want to print energy
+.vanilla
 	ldh a, [hUILayoutFlags]
 	set BIT_PARTY_MENU_HP_BAR, a
 	ldh [hUILayoutFlags], a
-	add hl, bc
+	add hl, bc ;  ; this is where the "HP:" double-char starts.
 	predef DrawHP2 ; draw HP bar and prints current / max HP
 	ldh a, [hUILayoutFlags]
 	res BIT_PARTY_MENU_HP_BAR, a
 	ldh [hUILayoutFlags], a
 	call SetPartyMenuHPBarColor ; color the HP bar (on SGB)
 	pop hl
+	push hl
+	ld bc, 16 ; 14 columns to the right, pushing from X, 3 to X, 17 where it can print null, FNT, PSN, PRZ, etc.
+	add hl, bc
+	ld de, wLoadedMonStatus
+	call PrintStatusCondition
+	pop hl ; restores back to X, 3
 	jr .printLevel
 .teachMoveMenu
 	push hl
@@ -97,12 +102,23 @@ RedrawPartyMenu_::
 	pop hl
 .printLevel
 	ld bc, 10 ; move 10 columns to the right
-	add hl, bc
+	add hl, bc ; hl becomes value C3AD as an example of a coordinate that's at 0, 13
 	call PrintLevel
-	pop hl
+	pop hl ; reset to X, 3 (C3A3 it looks like)
 	pop de
-	inc de
-	ld bc, 2 * SCREEN_WIDTH
+	inc de ; this gets us to the next Pokemon
+	ld bc, 2 * SCREEN_WIDTH ; prepare to go to the next Pokemon
+	ld a, [wIsInBattle]
+	and a
+	jr z, .vanilla2
+	ld bc, SCREEN_WIDTH ; go down by one row instead ; = 20 tiles
+	add hl, bc ; guessing it should be C3B7. it is
+	pop bc
+	push bc
+	; before we increase c, I want to get my energy printed
+	call PrintEnergyRow
+	ld bc, SCREEN_WIDTH ; get down that second row
+.vanilla2
 	add hl, bc
 	pop bc
 	inc c
@@ -163,7 +179,7 @@ RedrawPartyMenu_::
 	add hl, bc
 	call PlaceString
 	pop hl
-	jr .printLevel
+	jp .printLevel
 .ableToEvolveText
 	db "ABLE@"
 .notAbleToEvolveText
@@ -184,6 +200,20 @@ RedrawPartyMenu_::
 	ld hl, PartyMenuMessagePointers
 	ld b, 0
 	ld c, a
+	;ld a, [wIsInBattle]
+	;and a
+	;jr z, .vanilla3
+	ld a, [wEnergyGranted]
+	and a
+	jr nz, .vanilla3
+	;ld c, 12 ; lazy pointer to get the special granting message
+	;ld a, [wTempByteValue]
+	;push hl
+	;ld hl, wStringBuffer
+	;ld [hli], a
+	;ld [hl], '@'
+	;pop hl
+.vanilla3
 	add hl, bc
 	ld a, [hli]
 	ld h, [hl]
@@ -233,6 +263,7 @@ PartyMenuMessagePointers:
 	dw PartyMenuUseTMText
 	dw PartyMenuSwapMonText
 	dw PartyMenuItemUseText
+	dw PartyMenuAttachEnergyText
 
 PartyMenuNormalText:
 	text_far _PartyMenuNormalText
@@ -252,6 +283,10 @@ PartyMenuUseTMText:
 
 PartyMenuSwapMonText:
 	text_far _PartyMenuSwapMonText
+	text_end
+	
+PartyMenuAttachEnergyText:
+	text_far _PartyMenuAttachEnergyText
 	text_end
 
 PotionText:
@@ -303,4 +338,47 @@ SetPartyMenuHPBarColor:
 	call RunPaletteCommand
 	ld hl, wWhichPartyMenuHPBar
 	inc [hl]
+	ret
+
+PrintEnergyRow:
+	; everything was pushed just before
+	; c holds our offset, so put that into a for AddNTimes
+	push bc
+	push de
+	push hl
+	ld a, c
+	ld hl, wPartyMon1PP
+	ld bc, PARTYMON_STRUCT_LENGTH
+	call AddNTimes
+	ld d, h
+	ld e, l
+	; now de holds our PP
+	pop hl ; should get us back on the graphics coordinate
+	push hl ; for re-restoration
+	ld b, $C0 ; points at fighting
+	ld c, 3
+.loop
+	inc b
+	ld [hl], b
+	inc hl
+	ld a, [de]
+	and $f0
+	swap a
+	add $F6
+	ld [hli], a
+	inc hl ; whitespace
+	inc b
+	ld [hl], b
+	inc hl
+	ld a, [de]
+	and $0f
+	add $F6
+	ld [hli], a
+	inc hl ; whitespace
+	inc de
+	dec c
+	jr nz, .loop
+	pop hl
+	pop de
+	pop bc
 	ret
