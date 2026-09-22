@@ -10,13 +10,25 @@ ldh a, [hWhoseTurn] ; 0 = player's turn. As I make this a repeatable function, w
 and a
 jr z, .nextMonLoop
 ; otherwise it's the enemy needing to draw
+ld a, [wIsInBattle]
+ld d, a ; assuming it's 1 for wild battle...
+ld hl, wEnemyMonHP
+dec a
+jr z, .nextMonLoop ; we have a wild battle going on
 ld hl, wEnemyMon1HP
 ld a, [wEnemyPartyCount]
 ld d, a
 .nextMonLoop
+ld bc, wPartyMon1Moves - (wPartyMon1HP + 1) ; d173 - (d167) = $c
+ld a, HIGH(wEnemyMonHP) ; $CF
+cp h
+jr nz, .normalTrainerBattle
+; otherwise, it's just a wild battle, and the data moves differently
+ld c, wEnemyMonMoves - (wEnemyMonHP + 1) ; $6
+		;cfed			   - cfe7
+.normalTrainerBattle
 ld a, [hli]
 or [hl]
-ld bc, wPartyMon1Moves - (wPartyMon1HP + 1)
 add hl, bc ; now hl is at wPartyMon1Moves
 jr z, .FaintedOrEmptySlot_SkipEnergyOptions
 ld b, 4

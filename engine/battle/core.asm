@@ -382,7 +382,7 @@ MainInBattleLoop:
 	cp $2 ; was cancel selected? 
 	jr z, .partyMonDeselected
 	and a ; was ATTACH selected?
-	jr z, .EscapeThisPreTurnWork
+	jr z, .AttachSelected
 	; fall-through here means Stats was selected
 	xor a ; PLAYER_PARTY_DATA
 	ld [wMonDataLocation], a
@@ -412,7 +412,10 @@ MainInBattleLoop:
 	ld b, BANK(AnimationSubstitute) ; BANK(AnimationMinimizeMon)
 	call Bankswitch
 .enemyMonPicReloaded ; enemy mon pic has been reloaded, so return to the party menu
-	jp .partyMenuWasSelected	
+	jp .partyMenuWasSelected
+.AttachSelected
+	call HasMonFainted
+	jr z, .partyMonDeselected
 .EscapeThisPreTurnWork
 	pop af ; back to integer value
 	ld [wTempByteValue], a
