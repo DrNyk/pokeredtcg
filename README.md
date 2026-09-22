@@ -29,3 +29,14 @@ For other pret projects, see [pret.github.io](https://pret.github.io/).
 [tools]: https://github.com/pret/gb-asm-tools
 [ci]: https://github.com/pret/pokered/actions
 [ci-badge]: https://github.com/pret/pokered/actions/workflows/main.yml/badge.svg
+
+
+---
+
+For PokeRed TCG:
+
+The main branch is a very basic schema of setting up type relations on existing battle mechanics.
+
+This alone should give a fresh experience for someone that doesn't want to veer too far from the original gameplay experience.
+
+However, I felt it was not novel enough. So I added an energy system to replace the PP system, in Branch V2. Moves may require a specific type of energy, and a sufficient amount of energy to be usable. Energy is also used to pay retreat costs - that is both switching a Pokemon and running from wild Pokemon.
