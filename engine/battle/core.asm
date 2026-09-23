@@ -3334,7 +3334,6 @@ PrintMenuItem:
 ; print TYPE/<type> and <curPP>/<maxPP>
 	call GetCurrentMove ; this will update wPlayerMoveType and wPlayerMoveMaxPP variables for us
 	hlcoord 1, 10
-	ld b, b
 	predef PrintMoveType ; in this function I already used `and $07` to strip down to just primary type
 	xor a
 	ld [wTempByteValue], a ; I'm going to use this as an extra flag to figure out the colorless situation / sky attack support
