@@ -1,0 +1,36 @@
+ApplyAttackToEitherPokemon:
+	ldh a, [hWhoseTurn]
+	ld b, a
+	and a
+	ld a, [wEnemyMoveEffect]
+	jr z, .playerTurn
+	ld a, [wPlayerMoveEffect]
+.playerTurn
+	cp OHKO_EFFECT
+	jr z, .ApplyDamageToTarget
+	jr .unity1
+.unity1
+	cp SUPER_FANG_EFFECT
+	jr z, .superFangEffect
+	cp SPECIAL_DAMAGE_EFFECT
+	jr z, .specialDamage
+	ld a, b
+	and a
+	ld a, [wPlayerMovePower]
+	jr z, .playerTurn2
+	ld a, [wEnemyMovePower]
+.playerTurn2
+	and a
+	jr z, .ApplyAttackToTargetDone ; no attack to apply if base power is 0
+	jr .ApplyDamageToTarget
+	
+	
+	
+	
+	
+.ApplyAttackToTargetDone
+	ldh a, [hWhoseTurn]
+	and a
+	jp z, ApplyAttackToEnemyPokemonDone
+	jp ApplyAttackToPlayerPokemonDone
+.ApplyDamageToTarget

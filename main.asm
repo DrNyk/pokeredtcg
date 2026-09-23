@@ -1,3 +1,5 @@
+INCLUDE "debugfile.inc"
+DEF PRINT_DEBUGFILE EQU $1
 SECTION "bank1", ROMX
 
 INCLUDE "data/sprites/facings.asm"

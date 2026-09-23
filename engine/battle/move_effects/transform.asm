@@ -100,24 +100,24 @@ TransformEffect_:
 	ld bc, wBattleMonMoves - wBattleMonPP
 	add hl, bc ; ld hl, wBattleMonMoves
 	ld b, NUM_MOVES
-.copyPPLoop
-; 5 PP for all moves
-	ld a, [hli]
-	and a
-	jr z, .lessThanFourMoves
-	ld a, 5
-	ld [de], a
-	inc de
-	dec b
-	jr nz, .copyPPLoop
-	jr .copyStats
-.lessThanFourMoves
-; 0 PP for blank moves
-	xor a
-	ld [de], a
-	inc de
-	dec b
-	jr nz, .lessThanFourMoves
+; .copyPPLoop
+; ; 5 PP for all moves
+	; ld a, [hli]
+	; and a
+	; jr z, .lessThanFourMoves
+	; ld a, 5
+	; ld [de], a
+	; inc de
+	; dec b
+	; jr nz, .copyPPLoop
+	; jr .copyStats
+; .lessThanFourMoves
+; ; 0 PP for blank moves
+	; xor a
+	; ld [de], a
+	; inc de
+	; dec b
+	; jr nz, .lessThanFourMoves
 .copyStats
 ; original (unmodified) stats and stat mods
 	pop hl

@@ -1,22 +1,38 @@
 ; creates a set of moves that may be used and returns its address in hl
 ; unused slots are filled with 0, all used slots may be chosen with equal probability
 AIEnemyTrainerChooseMoves:
-	ld a, $a
-	ld hl, wBuffer ; init temporary move selection array. Only the moves with the lowest numbers are chosen in the end
-	ld [hli], a   ; move 1
-	ld [hli], a   ; move 2
-	ld [hli], a   ; move 3
-	ld [hl], a    ; move 4
-	ld a, [wEnemyDisabledMove] ; forbid disabled move (if any)
-	swap a
-	and $f
-	jr z, .noMoveDisabled
-	ld hl, wBuffer
-	dec a
-	ld c, a
-	ld b, $0
-	add hl, bc    ; advance pointer to forbidden move
-	ld [hl], $50  ; forbid (highly discourage) disabled move
+	; ld a, $a
+	; ld hl, wBuffer ; init temporary move selection array. Only the moves with the lowest numbers are chosen in the end
+	; ld [hli], a   ; move 1
+	; ld [hli], a   ; move 2
+	; ld [hli], a   ; move 3
+	; ld [hl], a    ; move 4
+	; ld a, [wEnemyDisabledMove] ; forbid disabled move (if any)
+	; swap a
+	; and $f
+	; jr z, .noMoveDisabled
+	; ld hl, wBuffer
+	; dec a
+	; ld c, a
+	; ld b, $0
+	; add hl, bc    ; advance pointer to forbidden move
+	; ld [hl], $50  ; forbid (highly discourage) disabled move
+	
+	ld b, $4
+	ld de, wBuffer
+	ld hl, wEnergyStringBuffer ; holds my currently viable moves
+.nextWeight
+	ld a, [hli]
+	and a
+	ld a, $a ; normal AI preference for moves
+	jr nz, .validmove ; if the hl entry was a move ID, we can use it.
+	ld a, $50 ; heavily discourage move because that slot was not viable per AnyMoveToSelect
+.validmove
+	ld [de], a
+	inc de
+	dec b
+	jr nz, .nextWeight
+	
 .noMoveDisabled
 	ld hl, TrainerClassMoveChoiceModifications
 	ld a, [wTrainerClass]
@@ -76,7 +92,7 @@ AIEnemyTrainerChooseMoves:
 	cp NUM_MOVES + 1
 	jr nz, .loopUndoPartialIteration
 	ld hl, wBuffer  ; temp move selection array
-	ld de, wEnemyMonMoves  ; enemy moves
+	ld de, wEnergyStringBuffer ; wEnemyMonMoves  ; enemy moves
 	ld c, NUM_MOVES
 .filterMinimalEntries ; all minimal entries now have value 1. All other slots will be disabled (move set to 0)
 	ld a, [de]
@@ -100,7 +116,8 @@ AIEnemyTrainerChooseMoves:
 	ld hl, wBuffer    ; use created temporary array as move set
 	ret
 .useOriginalMoveSet
-	ld hl, wEnemyMonMoves    ; use original move set
+	; ld hl, wEnemyMonMoves    ; use original move set
+	ld hl, wEnergyStringBuffer ; act like a wild mon and randomly choose anything valid
 	ret
 
 AIMoveChoiceModificationFunctionPointers:
@@ -115,7 +132,7 @@ AIMoveChoiceModification1:
 	and a
 	ret z ; return if no status ailment on player's mon
 	ld hl, wBuffer - 1 ; temp move selection array (-1 byte offset)
-	ld de, wEnemyMonMoves ; enemy moves
+	ld de, wEnergyStringBuffer ; wEnemyMonMoves ; enemy moves
 	ld b, NUM_MOVES + 1
 .nextMove
 	dec b
@@ -123,8 +140,9 @@ AIMoveChoiceModification1:
 	inc hl
 	ld a, [de]
 	and a
-	ret z ; no more moves in move set
+	;ret z ; no more moves in move set
 	inc de
+	jr z, .nextMove ; this move is unavailable due to Disable or Insufficient PP, try the next one
 	call ReadMove
 	ld a, [wEnemyMovePower]
 	and a
@@ -160,7 +178,7 @@ AIMoveChoiceModification2:
 	cp $1
 	ret nz
 	ld hl, wBuffer - 1 ; temp move selection array (-1 byte offset)
-	ld de, wEnemyMonMoves ; enemy moves
+	ld de, wEnergyStringBuffer ; wEnemyMonMoves ; enemy moves
 	ld b, NUM_MOVES + 1
 .nextMove
 	dec b
@@ -168,8 +186,9 @@ AIMoveChoiceModification2:
 	inc hl
 	ld a, [de]
 	and a
-	ret z ; no more moves in move set
+	;ret z ; no more moves in move set
 	inc de
+	jr z, .nextMove ; this move is unavailable due to Disable or Insufficient PP, try the next one
 	call ReadMove
 	ld a, [wEnemyMoveEffect]
 	cp ATTACK_UP1_EFFECT
@@ -190,7 +209,7 @@ AIMoveChoiceModification2:
 ; unless there's no damaging move that deals at least neutral damage
 AIMoveChoiceModification3:
 	ld hl, wBuffer - 1 ; temp move selection array (-1 byte offset)
-	ld de, wEnemyMonMoves ; enemy moves
+	ld de, wEnergyStringBuffer ; wEnemyMonMoves ; enemy moves
 	ld b, NUM_MOVES + 1
 .nextMove
 	dec b
@@ -198,8 +217,9 @@ AIMoveChoiceModification3:
 	inc hl
 	ld a, [de]
 	and a
-	ret z ; no more moves in move set
+	;ret z ; no more moves in move set
 	inc de
+	jr z, .nextMove ; this move is unavailable due to Disable or Insufficient PP, try the next one
 	call ReadMove
 	push hl
 	push bc
@@ -220,7 +240,7 @@ AIMoveChoiceModification3:
 	push bc
 	ld a, [wEnemyMoveType]
 	ld d, a
-	ld hl, wEnemyMonMoves  ; enemy moves
+	ld hl, wEnergyStringBuffer ; wEnemyMonMoves  ; enemy moves
 	ld b, NUM_MOVES + 1
 	ld c, $0
 .loopMoves
@@ -228,7 +248,7 @@ AIMoveChoiceModification3:
 	jr z, .done
 	ld a, [hli]
 	and a
-	jr z, .done
+	jr z, .loopMoves ; .done
 	call ReadMove
 	ld a, [wEnemyMoveEffect]
 	cp SUPER_FANG_EFFECT
@@ -578,13 +598,133 @@ AISwitchIfEnoughMons:
 	ld a, d ; how many available monsters are there?
 	cp 2    ; don't bother if only 1
 	jp nc, SwitchEnemyMon
+.wipecarryflagthenreturn
 	and a
+	ret
+	
+ColorLessEnergyCheck_TrainerAIBank:
+	push bc
+	push hl
+	ld b, 3
+	xor a
+	ld c, a ; accumulator
+	.loop
+	ld a, [hl] 
+	and $f
+	add c
+	ld c, a
+	ld a, [hli]
+	swap a
+	and $f
+	add c
+	ld c, a
+	dec b
+	jr nz, .loop
+	pop hl
+	pop bc
+	; all 6 nybbles have been summed and put in a
 	ret
 
 SwitchEnemyMon:
 
 ; prepare to withdraw the active monster: copy HP, party pos, and status to roster
-
+	;ld b, b
+	ld a, [wEnemyMonType1]
+	and $F0
+	swap a ; this is my retreat cost
+	ld b, a ; the amount of energy I need to flee
+	ld hl, wEnemyMonPP
+	call ColorLessEnergyCheck_TrainerAIBank
+	cp b
+	jr c, AISwitchIfEnoughMons.wipecarryflagthenreturn ; not enough energy
+	push hl
+	call AIFindDesiredEnergyTypes ; clobbers everything. Returns in b positive mask (types wanted) and in c negative mask (types to discard)
+	pop hl ;ld hl, wEnemyMonPP
+	ld de, wEnergyStringBuffer ; I'm going to play around with AI PP here...
+	ld a, [hli]
+	ld [de], a
+	inc de
+	ld a, [hli]
+	ld [de], a
+	inc de
+	ld a, [hl]
+	ld [de], a
+	inc de
+	ld a, $AA ; my stop signal
+	ld [de], a ; now wEnergyStringBuffer is PP(Fighting|Fire), PP(Water|Grass), PP(Lightning|Psychic), and $AA
+	
+	; going into here, c are the types I want to discard!
+	; i will overwrite b as I don't care about what I keep, per se.
+	ld hl, wEnergyStringBuffer
+	ld a, [wEnemyMonType1]
+	and $F0
+	swap a ; this is my retreat cost
+	ld b, a ; how much energy I need to discard
+	ld d, $10 ; for high nibble deductions
+	ld e, $2 ; using as kind of a counter to how many times I've tried this passover
+.highnibblecheck
+	srl c
+	jr nc, .lownibblecheck
+.highnibblesubtractloop
+	ld d, $10
+	ld a, [hl]
+	sub d
+	jr c, .lownibblecheck ; we could not accept this deduction, so move on to the next energy
+	ld [hl], a
+	dec b
+	jr z, .PPCostPaid
+	jr .highnibblesubtractloop
+.lownibblecheck
+	srl c
+	jr nc, .next
+	ld a, [hl]
+	and $07
+	jr z, .next ; there's no more energy to deduct on this lownibble PP
+	dec [hl]
+	dec b
+	jr z, .PPCostPaid
+	jr .lownibblecheck
+.next
+	inc hl
+	ld a, $AA
+	cp [hl]
+	jr nz, .highnibblecheck
+; fall to here means hl has progressed passed all the PP in wEnergyStringBuffer
+; and it means that we still have energy cost to pay in register b
+	ld hl, wEnergyStringBuffer ; reset this
+	ld c, %00111111 ; check all the types next time
+	dec e
+	jr z, .highnibblecheck ; we are going on our third pass! This "has" to guarantee it works
+	; otherwise, if we have only had one pass done, our c "negative mask" should exclude STAB type
+	ld a, [wEnemyMonType1]
+	and $07 ; this is my Pokemon's type
+	dec a ; disregard colorless
+	jr z, .highnibblecheck
+	ld d, $0
+	scf
+.tryagain
+	rl d
+	dec a
+	jr nz, .tryagain
+; fall through here when the STAB type is met
+	ld a, d
+	ld d, $10 ; restore my d of $10 here for the next loop through for high nibble checks
+	xor c ; say I have a fighting type. It's a register become %00000001. xor with %00111111 yields %00111110 meaning check if any non-fighting energy can be discarded this loop.
+	ld c, a
+	jr .highnibblecheck
+.PPCostPaid	; could be fortunate that unwanted PP got discarded, or we had to throw away some additional PP
+	ld hl, wEnergyStringBuffer
+	ld de, wEnemyMonPP
+	ld a, [hli]
+	ld [de], a
+	inc de
+	ld a, [hli]
+	ld [de], a
+	inc de
+	ld a, [hl]
+	ld [de], a
+	
+	; back to vanilla
 	ld a, [wEnemyMonPartyPos]
 	ld hl, wEnemyMon1HP
 	ld bc, PARTYMON_STRUCT_LENGTH
@@ -592,9 +732,21 @@ SwitchEnemyMon:
 	ld d, h
 	ld e, l
 	ld hl, wEnemyMonHP
-	ld bc, MON_STATUS + 1 - MON_HP ; also copies party pos in-between HP and status
+	ld bc, MON_STATUS + 1 - MON_HP ; also copies party pos in-between HP and status ; 4 bytes to copy. So it copies CFE6-7 (HP 2 bytes), CFE8 (don't care), and CFE9 (status) into wEnemyMonNHP-Status field...
+	call CopyData ; this does dec bc to being 00
+	
+	; now do the same thing for PP
+	
+	ld a, [wEnemyMonPartyPos]
+	ld hl, wEnemyMon1PP
+	ld bc, PARTYMON_STRUCT_LENGTH
+	call AddNTimes
+	ld d, h
+	ld e, l
+	ld hl, wEnemyMonPP
+	ld bc, 3
 	call CopyData
-
+	
 	ld hl, AIBattleWithdrawText
 	call PrintText
 
@@ -740,3 +892,67 @@ AIPrintItemUse_:
 AIBattleUseItemText:
 	text_far _AIBattleUseItemText
 	text_end
+
+AIFindDesiredEnergyTypes: ; clobbers everything. But returns in b the positive mask (these types wanted), and in c returns the negative mask (doesn't really need to be put on this mon).
+	ld b, 0 ; b is a big time tracker that helps us look at all the moves 
+	ld hl, wEnemyMonMoves
+.grandloop
+	ld de, wMoveData ; when I use FarCopyData, de gets shuffled along and starts overwriting other important data... So we just restore it. I could do a push and pop, but that's 2 more bytes...
+	ld a, [hli]
+	and a
+	jr z, .skipAsItsTypeNull2 ; this move slot is empty and has no energy needs
+	dec a
+	push hl
+	push bc
+	ld hl, Moves
+	ld bc, MOVE_LENGTH
+	call AddNTimes
+	ld a, BANK(Moves)
+	call FarCopyData
+	pop bc
+	pop hl
+	ld a, [wMoveData + 3]
+	and $70
+	swap a
+	jr z, .skipAsItsTypeNull
+	scf
+	ld c, $0
+.rotationloop
+	rl c
+	dec a
+	jr nz, .rotationloop ; once a hits zero, then we've rotated c far enough. 
+	; if a starts at 1, then c becomes 1 (%0001). if a starts at 2, then c becomes 2 (%0010). if a starts at 3, then c becomes 4 (%0100)
+	ld a, c
+	or b ; this keeps of the binary type matches across all 8 possible type asks on my moveset 
+	ld b, a ; save for next time
+.skipAsItsTypeNull
+	ld a, [wMoveData + 3]
+	and $07
+	jr z, .skipAsItsTypeNull2 ; doubt this ever executes as we're looking at the primary type, but a safety check anyway
+	scf
+	ld c, $0
+.rotationloop2
+	rl c
+	dec a
+	jr nz, .rotationloop2
+	ld a, c
+	or b
+	ld b, a
+.skipAsItsTypeNull2
+	ld a, LOW(wEnemyMonMoves+4) ; checking if we've gone too far on type checks
+	cp l
+	jr nz, .grandloop
+; once we have checked all 4 moves, we fall to here
+	ld a, %01111110
+	and b ; creates a mask of energies this mon wants to have
+	jr nz, .usualcontinue
+	ld b, a ; = $00; the mon doesn't want any specific energy; all colorless
+	ld c, %00111111 ; any of the 6 elementals I am happy to discard for this mon
+	ret
+.usualcontinue
+	srl a ; rotates it so instead of "0-index" it's "-1-index". Before srl, the first bit (bit 0) would have represented colorless, now it represents fighting.
+	ld b, a ; load it into b
+	xor %00111111
+	ld c, a ; now c holds a mask of energy the mon wants to GET RID OF
+	ret
+	

@@ -3,7 +3,7 @@
 	db  60,  62,  63,  60,  80
 	;   hp  atk  def  spd  spc
 
-	tcgtype GRASS, FIRE, NULL_TYPE
+	tcgtype 1, GRASS, FIRE, NULL_TYPE
 	db 45 ; catch rate
 	db 141 ; base exp
 

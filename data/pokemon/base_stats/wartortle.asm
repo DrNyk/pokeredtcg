@@ -3,7 +3,7 @@
 	db  59,  63,  80,  58,  65
 	;   hp  atk  def  spd  spc
 
-	tcgtype WATER, LIGHTNING, NULL_TYPE
+	tcgtype 1, WATER, LIGHTNING, NULL_TYPE
 	db 45 ; catch rate
 	db 143 ; base exp
 

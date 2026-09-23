@@ -8,13 +8,20 @@ ConversionEffect_:
 	push hl
 	ld h, d
 	ld l, e
-	pop de
+	pop de ; otherwise swaps them around so when it is the enemy's turn, de is wEnemyMonType1 and hl is wBattleMonType1
 	ld a, [wPlayerBattleStatus1]
 .conversionEffect
 	bit INVULNERABLE, a ; is mon immune to typical attacks (dig/fly)
 	jr nz, PrintButItFailedText
 ; copy target's types to user
 	ld a, [hli]
+	and $07 ; strips the enemy's type value down to just the actual type
+	push hl
+	ld h, a
+	ld a, [de]
+	and $f0 ; strips it down to just the user's retreat cost
+	or h ; combine it with the new type
+	pop hl
 	ld [de], a
 	inc de
 	ld a, [hl]

@@ -8,10 +8,9 @@ TypeNames:
 	dw .Grass
 	dw .Lightning
 	dw .Psychic
-	dw .Dark
-	dw .Metal
+	dw .Transformed
 
-	assert_table_length NUM_TYPES
+	assert_table_length NUM_TYPES + 1
 
 .NullType:	   db "NULLTYPE@"
 .Colorless:   db "COLORLESS@"
@@ -21,6 +20,4 @@ TypeNames:
 .Grass:    db "GRASS@"
 .Lightning: db "LIGHTNING@"
 .Psychic:  db "PSYCHIC@"
-.Dark:		db "DARK@"
-.Metal:		db "METAL@"
-
+.Transformed: db "TRANSFORM@"

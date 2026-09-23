@@ -3,7 +3,7 @@
 	db  25,  35,  70,  45,  95
 	;   hp  atk  def  spd  spc
 
-	tcgtype METAL, FIRE, GRASS
+	tcgtype 1, LIGHTNING, FIRE, GRASS
 	db 190 ; catch rate
 	db 89 ; base exp
 

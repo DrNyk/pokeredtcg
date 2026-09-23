@@ -17,30 +17,34 @@ UsedMoveText:
 
 .playerTurn
 	ld [hl], a
+	xor a
 	ld [wMoveGrammar], a
-	call GetMoveGrammar
-	ld a, [wMonIsDisobedient]
-	and a
-	ld hl, UsedMove2Text
-	ret nz
-
-	; check move grammar
-	ld a, [wMoveGrammar]
-	cp $3
-	ld hl, UsedMove2Text
-	ret c
+	;ld [wMoveGrammar], a
+	;call GetMoveGrammar
+	;ld a, [wMonIsDisobedient]
+	;and a
+	;ld hl, UsedMove2Text
 	ld hl, UsedMove1Text
 	ret
+	;ret nz
+
+	; check move grammar
+	; ld a, [wMoveGrammar]
+	; cp $3
+	; ld hl, UsedMove2Text
+	; ret c
+	; ld hl, UsedMove1Text
+	; ret
 
 UsedMove1Text:
 	text_far _UsedMove1Text
 	text_asm
-	jr UsedMoveText_CheckObedience
+	; jr UsedMoveText_CheckObedience
 
-UsedMove2Text:
-	text_far _UsedMove2Text
-	text_asm
-	; fall through
+; UsedMove2Text:
+	; text_far _UsedMove2Text
+	; text_asm
+	; ; fall through
 
 UsedMoveText_CheckObedience:
 ; check obedience
@@ -63,77 +67,82 @@ UsedMoveText_CheckObedience:
 MoveNameText:
 	text_far _MoveNameText
 	text_asm
-	ld hl, .endusedmovetexts
-	ld a, [wMoveGrammar]
-	add a
-	push bc
-	ld b, $0
-	ld c, a
-	add hl, bc
-	pop bc
-	ld a, [hli]
-	ld h, [hl]
-	ld l, a
+	ld hl, EndUsedMove1Text
 	ret
+	; ld hl, .endusedmovetexts
+	; ld a, [wMoveGrammar]
+	; add a
+	; push bc
+	; ld b, $0
+	; ld c, a
+	; add hl, bc
+	; pop bc
+	; ld a, [hli]
+	; ld h, [hl]
+	; ld l, a
+	; ret
 
-.endusedmovetexts:
+;.endusedmovetexts:
 ; entries correspond to MoveGrammar sets
-	dw EndUsedMove1Text
-	dw EndUsedMove2Text
-	dw EndUsedMove3Text
-	dw EndUsedMove4Text
-	dw EndUsedMove5Text
+;	dw EndUsedMove1Text
+;	dw EndUsedMove2Text
+;	dw EndUsedMove3Text
+;	dw EndUsedMove4Text
+;	dw EndUsedMove5Text
 
 EndUsedMove1Text:
 	text_far _EndUsedMove1Text
 	text_end
 
-EndUsedMove2Text:
-	text_far _EndUsedMove2Text
-	text_end
+; EndUsedMove2Text:
+	; text_far _EndUsedMove2Text
+	; text_end
 
-EndUsedMove3Text:
-	text_far _EndUsedMove3Text
-	text_end
+; EndUsedMove3Text:
+	; text_far _EndUsedMove3Text
+	; text_end
 
-EndUsedMove4Text:
-	text_far _EndUsedMove4Text
-	text_end
+; EndUsedMove4Text:
+	; text_far _EndUsedMove4Text
+	; text_end
 
-EndUsedMove5Text:
-	text_far _EndUsedMove5Text
-	text_end
+; EndUsedMove5Text:
+	; text_far _EndUsedMove5Text
+	; text_end
 
 ; This function is redundant in the English localization.
 ; In Japanese, it selects one of 5 distinct sentence structures.
 ; In English, all of these sentences have the exact same structure,
 ; so this serves no purpose.
-GetMoveGrammar:
-	push bc
-	ld a, [wMoveGrammar] ; move ID
-	ld c, a
-	ld b, $0
-	ld hl, MoveGrammar
-.loop
-	ld a, [hli]
-; end of table?
-	cp -1
-	jr z, .end
-; match?
-	cp c
-	jr z, .end
-; advance grammar type at 0
-	and a
-	jr nz, .loop
-; next grammar type
-	inc b
-	jr .loop
+; GetMoveGrammar:
+	; ; ; xor a
+	; ; ; ld [wMoveGrammar], a
+	; ; ; ret
+	; push bc
+	; ld a, [wMoveGrammar] ; move ID
+	; ld c, a
+	; ld b, $0
+	; ld hl, MoveGrammar
+; .loop
+	; ld a, [hli]
+; ; end of table?
+	; cp -1
+	; jr z, .end
+; ; match?
+	; cp c
+	; jr z, .end
+; ; advance grammar type at 0
+	; and a
+	; jr nz, .loop
+; ; next grammar type
+	; inc b
+	; jr .loop
 
-.end
-; wMoveGrammar now contains move grammar
-	ld a, b
-	ld [wMoveGrammar], a
-	pop bc
-	ret
+; .end
+; ; wMoveGrammar now contains move grammar
+	; ld a, b
+	; ld [wMoveGrammar], a
+	; pop bc
+	; ret
 
-INCLUDE "data/moves/grammar.asm"
+; INCLUDE "data/moves/grammar.asm"

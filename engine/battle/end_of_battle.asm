@@ -60,6 +60,7 @@ EndOfBattle:
 	ld [hli], a
 	ld [hl], a
 	ld [wListScrollOffset], a
+	ld [wEnergyGranted], a ; for when I flee a battle. Without this, the next battle I get into may not grant energy turn 1.
 	ld hl, wBattleStatusData
 	ld b, wBattleStatusDataEnd - wBattleStatusData
 .loop

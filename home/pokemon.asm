@@ -8,11 +8,22 @@ DrawHPBar::
 	push bc
 
 	; Left
+	ld a, [wHPBarType]
+	cp $2
+	jr nz, .vanilla
+	ld a, [wIsInBattle]
+	and a
+	jr z, .vanilla
+	ld a, $C9
+	ld [hli], a
+	jr .skipvanilla
+	
+.vanilla
 	ld a, $71 ; "HP:"
 	ld [hli], a
 	ld a, $62
 	ld [hli], a
-
+.skipvanilla
 	push hl
 
 	; Middle
@@ -41,7 +52,8 @@ DrawHPBar::
 	ld a, c
 	and a
 	jr z, .done
-	ld e, 1
+	;ld e, 1
+	inc e ; we only get here if e (and c) was 0 :). Save a byte.
 
 .fill
 	ld a, e
@@ -320,7 +332,9 @@ PrintStatusCondition::
 	pop de
 	jr nz, PrintStatusConditionNotFainted
 ; if the pokemon's HP is 0, print "FNT"
-	ld_hli_a_string "FNT"
+	;ld_hli_a_string "FNT"
+	ld a, $CC ; bytes 7 and 8
+	ld [hl], a ; byte 9
 	and a
 	ret
 

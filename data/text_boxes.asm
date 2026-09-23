@@ -33,8 +33,9 @@ TextBoxTextAndCoordTable:
 	text_box_text SWITCH_STATS_CANCEL_MENU_TEMPLATE, 11, 11, 19, 17, SwitchStatsCancelText,   13, 12
 	text_box_text BUY_SELL_QUIT_MENU_TEMPLATE,        0,  0, 10,  6, BuySellQuitText,          2,  1
 	text_box_text MONEY_BOX_TEMPLATE,                11,  0, 19,  2, MoneyText,               13,  0
-	text_box_text JP_AH_MENU_TEMPLATE,                7,  6, 11, 10, JapaneseAhText,           8,  8
-	text_box_text JP_POKEDEX_MENU_TEMPLATE,          11,  8, 19, 17, JapanesePokedexMenu,     12, 10
+	;text_box_text JP_AH_MENU_TEMPLATE,                0,  10, 10, 17, JapaneseAhText,           8,  8
+	text_box_text JP_AH_MENU_TEMPLATE,                0,  13, 12, 17, JapaneseAhText,           1,  14
+	text_box_text ENERGY_DISCARD_MENU_TEMPLATE,      14,  0, 19, 16, JapanesePokedexMenu,     16,  1
 
 BuySellQuitText:
 	db   "BUY"
@@ -79,10 +80,16 @@ SwitchStatsCancelText:
 	next "CANCEL@"
 
 JapaneseAhText:
-	db "アッ！@"
+	db "This action"
+	next "requires"
+	next "energy.@"
 
 JapanesePokedexMenu:
-	db   "データをみる"
-	next "なきごえ"
-	next "ぶんぷをみる"
-	next "キャンセル@"
+	db   $C1, $F1
+	next $C2, $F1
+	next $C3, $F1
+	next $C4, $F1
+	next $C5, $F1
+	next $C6, $F1
+	next "OK"
+	next "RES@"

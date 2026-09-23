@@ -95,6 +95,6 @@ MACRO? dname
 ENDM
 
 MACRO tcgtype
-	db \1
-	db ((\2) << 4) | (\3)
+	db ((\1) << 4) | (\2)
+	db ((\3) << 4) | (\4)
 ENDM

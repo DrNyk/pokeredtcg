@@ -13,12 +13,13 @@ LeechSeedEffect_:
 .leechSeedEffect
 ; miss if the target is grass-type or already seeded
 	ld a, [de]
+	and $07
 	cp GRASS
 	jr z, .moveMissed
-	inc de
-	ld a, [de]
-	cp GRASS
-	jr z, .moveMissed
+;	inc de
+;	ld a, [de] ; type2 has been reassigned as the relations byte
+;	cp GRASS
+;	jr z, .moveMissed
 	bit SEEDED, [hl]
 	jr nz, .moveMissed
 	set SEEDED, [hl]

@@ -49,29 +49,31 @@ IF DEF(_DEBUG)
 
 	; Exeggutor gets four HM moves.
 	ld hl, wPartyMon1Moves
-	ld a, FLY
+	ld a, METRONOME
 	ld [hli], a
 	ld a, CUT
 	ld [hli], a
-	ld a, SURF
+	ld a, MIRROR_MOVE
 	ld [hli], a
 	ld a, STRENGTH
 	ld [hl], a
 	ld hl, wPartyMon1PP
-	ld a, 15
+	;ld a, 15
+	xor a
 	ld [hli], a
-	ld a, 30
+	;ld a, 30
 	ld [hli], a
-	ld a, 15
+	;ld a, 15
 	ld [hli], a
 	ld [hl], a
 
 	; Jolteon gets Thunderbolt.
 	ld hl, wPartyMon3Moves + 3
-	ld a, THUNDERBOLT
+	ld a, TRANSFORM
 	ld [hl], a
 	ld hl, wPartyMon3PP + 3
-	ld a, 15
+	;ld a, 15
+	xor a
 	ld [hl], a
 
 	; Articuno gets Fly.
@@ -79,7 +81,8 @@ IF DEF(_DEBUG)
 	ld a, FLY
 	ld [hl], a
 	ld hl, wPartyMon5PP
-	ld a, 15
+	;ld a, 15
+	xor a
 	ld [hl], a
 
 	; Pikachu gets Surf.
@@ -87,7 +90,8 @@ IF DEF(_DEBUG)
 	ld a, SURF
 	ld [hl], a
 	ld hl, wPartyMon6PP + 2
-	ld a, 15
+	;ld a, 15
+	xor a
 	ld [hl], a
 
 	; Get some debug items.
@@ -142,7 +146,11 @@ ENDC
 DebugNewGameItemsList:
 	db BICYCLE, 1
 	db FULL_RESTORE, 99
-	db FULL_HEAL, 99
+	db PP_UP, 99
+	db ETHER, 99
+	db MAX_ETHER, 99
+	db ELIXER, 99
+	db MAX_ELIXER, 99
 	db ESCAPE_ROPE, 99
 	db RARE_CANDY, 99
 	db MASTER_BALL, 99

@@ -3,7 +3,7 @@
 	db  78,  84,  78, 100,  85
 	;   hp  atk  def  spd  spc
 
-	tcgtype FIRE, WATER, FIGHTING
+	tcgtype 3, FIRE, WATER, FIGHTING
 	db 45 ; catch rate
 	db 209 ; base exp
 
