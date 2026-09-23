@@ -39,7 +39,11 @@ PrintMonType:
 	ld [hl], a
 	pop hl ; restores the weakness line
 .dontprintweakness
+<<<<<<< HEAD
 	ld bc, SCREEN_WIDTH * 2
+=======
+	ld bc, SCREEN_WIDTH * 2 ; bc is trashed by PrintType, so restoring it
+>>>>>>> 0c4d875654af9c2935b0214d9ded7e1dcbb194a7
 	add hl, bc ; gets us down to the resistance line
 	ld a, [wMonHType2]
 	and $0f
