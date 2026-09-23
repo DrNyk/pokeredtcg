@@ -51,11 +51,11 @@ IF DEF(_DEBUG)
 	ld hl, wPartyMon1Moves
 	ld a, METRONOME
 	ld [hli], a
-	ld a, CUT
+	ld a, SKY_ATTACK
 	ld [hli], a
 	ld a, MIRROR_MOVE
 	ld [hli], a
-	ld a, STRENGTH
+	ld a, CONVERSION
 	ld [hl], a
 	ld hl, wPartyMon1PP
 	;ld a, 15

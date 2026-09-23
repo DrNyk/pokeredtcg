@@ -23,7 +23,7 @@ jr .nextMonster
 .ThisMonIsAlive
 ld bc, 6 ; not sure what constants this relates to
 add hl, bc ; this should bump hl to wEnemyMonNMoves
-ld b, b ; definitely need a debug byte here
+;ld b, b ; definitely need a debug byte here
 ;ld hl, wEnemyMon1Moves
 ld d, 4
 .topLoop
