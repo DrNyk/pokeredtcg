@@ -387,6 +387,8 @@ StatusScreen2:
 	inc de
 	inc de
 	ld a, [de]
+	and a
+	jr z, .escapeEarly ; zero PP
 	ld c, a ; cache real quick our pps
 	ld h, a ; 
 	swap h

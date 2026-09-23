@@ -3301,7 +3301,7 @@ PrintMenuItem:
 	hlcoord 1, 10
 	ld de, DisabledText
 	call PlaceString
-	jp .moveDisabled
+	jp .prepareToExit
 .notDisabled
 	ld hl, wCurrentMenuItem
 	push hl
@@ -3334,11 +3334,13 @@ PrintMenuItem:
 ; print TYPE/<type> and <curPP>/<maxPP>
 	call GetCurrentMove ; this will update wPlayerMoveType and wPlayerMoveMaxPP variables for us
 	hlcoord 1, 10
+	ld b, b
 	predef PrintMoveType ; in this function I already used `and $07` to strip down to just primary type
 	xor a
 	ld [wTempByteValue], a ; I'm going to use this as an extra flag to figure out the colorless situation / sky attack support
 	ld a, [wPlayerMoveType]
 	and $07 ; but it doesn't rewrite the wPlayerMoveType value so I have to re-and this.
+	ld b, a ; cache this type
 	add $BF
 	ld hl, wPlayerBattleStatus3
 	bit TRANSFORMED, [hl]
@@ -3351,10 +3353,14 @@ PrintMenuItem:
 	ld [hl], a
 	hlcoord 1, 9
 	ld de, TypeText
+	push bc
 	call PlaceString
-	ld a, [wPlayerMoveType]
-	and $07
-	ld b, a ; cache this type
+	pop bc
+	;ld a, [wPlayerMoveType]
+	;and $07
+	;ld b, a ; cache this type ; it's not cached earlier because PlaceString butchers it
+	;add $BF
+	ld a, b
 	add $BF
 	ld hl, wPlayerBattleStatus3
 	bit TRANSFORMED, [hl]
@@ -3367,7 +3373,7 @@ PrintMenuItem:
 	jp nz, .transformedPrint
 	ld a, b
 	sra a ; value of 0111 (7) -> 011 (3); 0110 (6) -> 011 (3); 0101 (5) -> 010 (2); 0100 (4) -> 010 (2); 0011 (3) -> 001 (1) ; 0010 (2) -> 001 (1) ... and all the ODD values set the carry flag
-	push af
+	;push af
 	jr nz, .coloredAttack
 	; this block executes when it's colorless
 	push hl
@@ -3377,11 +3383,11 @@ PrintMenuItem:
 	pop hl
 	ld [wTempByteValue], a ; total energy is great
 	inc hl ; compensates for the [hli] just before we re-enter at .PrimaryIsColorless
-	pop af ; restore the flags from before
-	ld a, [wTempByteValue] ; but keep our active a
+	;pop af ; restore the flags from before
+	;ld a, [wTempByteValue] ; but keep our active a
 	jr .PrimaryIsColorless ; this branch needs us to evaluate what the secondary is because if it's typed like Sky Attack we need to deduct that energy before we print this one
 .coloredAttack
-	pop af
+	;pop af
 	ld de, wBattleMonPP - 1
 .keepdecreasinga
 	inc de
@@ -3419,6 +3425,7 @@ PrintMenuItem:
 	push hl
 	ld hl, wBattleMonPP
 	call ColorLessEnergyCheck
+	ld [wTempByteValue], a ; why not cache this here with how much total energy we have
 	pop hl
 	sub c ; this was our first attack's energy requirements
 	jr nc, .zeroOrMoreColorlessEnergyInExcess
@@ -3463,16 +3470,20 @@ PrintMenuItem:
 	add $F6
 	ld [hl], a
 .noSecondType ; when we return here, we want to pick up the total energy from the colorlesscheck
-	ld a, [wTempByteValue] ; restore from the colorlesscheck
-	and a
-	jr z, .moveDisabled ; if wTempByteValue is zero, then I did not use ColorlessEnergyCheck because it was a colored attack. I have printed what I need. Except maybe Sky-Attack is borked. We'll see. But in any other case, it shouldn't print 0 on a colored energy page unless it's the wrong energy... so zeroes could be necessary. Hmm... Sky Attack is going to mess with me.
+	;ld a, [wTempByteValue] ; restore from the colorlesscheck
+	;and a
+	;jr z, .prepareToExit ; if wTempByteValue is zero, then I did not use ColorlessEnergyCheck because it was a colored attack. I have printed what I need. Except maybe Sky-Attack is borked. We'll see. But in any other case, it shouldn't print 0 on a colored energy page unless it's the wrong energy... so zeroes could be necessary. Hmm... Sky Attack is going to mess with me.
 ; this means we saw type1 is colorless, and type2 is probably null but could be fire due to sky attack
 	ld a, [wPlayerMoveType]
 	and $70
 	jr nz, .alternativeType2
+	ld a, [wPlayerMoveType]
+	and $07
+	dec a
 	ld a, [wTempByteValue]
 	; so there was just one type the entire time
-	jr .printCurrentEnergyAgain ; skip this alternativeType2 stuff
+	jr z, .printCurrentEnergyAgain ; skip this alternativeType2 stuff and just print the only colorless
+	jr .prepareToExit ; really means we want to get to the end is all
 .alternativeType2
 	; I think I need the minimum of the sky-attack typing. What I mean is, if I have no fire energy, but have multiple other energies, that needs to count to the colorless requirements. So I can't sub off the cost of a fire energy necessarily.
 	ld c, [hl] ; this is the cost of the second PP, in glyph offset
@@ -3515,7 +3526,7 @@ PrintMenuItem:
 	add $F6 ; re-add the $F6 for printable character
 	ld [hl], a
 	; fall through
-.moveDisabled
+.prepareToExit
 	ld a, $1
 	ldh [hAutoBGTransferEnabled], a
 	jp Delay3
@@ -3540,7 +3551,7 @@ ld de, wTempByteValue
 ld [de], a
 lb bc, %01000001, 2 ; prints a 2-digit number left-aligned to the / skipping lead zeroes
 call PrintNumber
-jr .moveDisabled
+jr .prepareToExit
 
 DisabledText:
 	db "disabled!@"
