@@ -23,12 +23,12 @@ IF DEF(_DEBUG)
 ELSE
 	db MEW, 20
 ENDC
-	db JOLTEON, 56
-	db DUGTRIO, 56
-	db ARTICUNO, 57
-IF DEF(_DEBUG)
-	db PIKACHU, 5
-ENDC
+	; db JOLTEON, 56
+	; db DUGTRIO, 56
+	; db ARTICUNO, 57
+; IF DEF(_DEBUG)
+	; db PIKACHU, 5
+; ENDC
 	db -1 ; end
 
 PrepareNewGameDebug: ; dummy except in _DEBUG
@@ -49,52 +49,71 @@ IF DEF(_DEBUG)
 
 	; Exeggutor gets four HM moves.
 	ld hl, wPartyMon1Moves
-	ld a, METRONOME
+	ld a, 1
 	ld [hli], a
-	ld a, SKY_ATTACK
+	inc a
 	ld [hli], a
-	ld a, MIRROR_MOVE
+	inc a
 	ld [hli], a
-	ld a, CONVERSION
+	inc a
 	ld [hl], a
-	ld hl, wPartyMon1PP
-	;ld a, 15
-	xor a
-	ld [hli], a
-	;ld a, 30
-	ld [hli], a
-	;ld a, 15
-	ld [hli], a
-	ld [hl], a
+	; ld hl, wPartyMon1PP
+	; ;ld a, 15
+	; xor a
+	; ld [hli], a
+	; ;ld a, 30
+	; ld [hli], a
+	; ;ld a, 15
+	; ld [hli], a
+	; ld [hl], a
 
-	; Jolteon gets Thunderbolt.
-	ld hl, wPartyMon3Moves + 3
-	ld a, TRANSFORM
-	ld [hl], a
-	ld hl, wPartyMon3PP + 3
-	;ld a, 15
-	xor a
-	ld [hl], a
+	; ; Jolteon gets Thunderbolt.
+	; ld hl, wPartyMon3Moves
+	; ld a, Fly
+	; ld [hli], a
+	; ld [hli], a
+	; ld [hli], a
+	; ld [hl], a
+	; ld hl, wPartyMon3PP + 3
+	; ;ld a, 15
+	; xor a
+	; ld [hl], a
 
-	; Articuno gets Fly.
-	ld hl, wPartyMon5Moves
-	ld a, FLY
-	ld [hl], a
-	ld hl, wPartyMon5PP
-	;ld a, 15
-	xor a
-	ld [hl], a
+	; ; Articuno gets Fly.
+	; ld hl, wPartyMon5Moves
+	; ld a, FLY
+	; ld [hl], a
+	; ld hl, wPartyMon5PP
+	; ;ld a, 15
+	; xor a
+	; ld [hl], a
 
-	; Pikachu gets Surf.
-	ld hl, wPartyMon6Moves + 2
-	ld a, SURF
-	ld [hl], a
-	ld hl, wPartyMon6PP + 2
-	;ld a, 15
-	xor a
-	ld [hl], a
+	; ; Pikachu gets Surf.
+	; ld hl, wPartyMon6Moves + 2
+	; ld a, SURF
+	; ld [hl], a
+	; ld hl, wPartyMon6PP + 2
+	; ;ld a, 15
+	; xor a
+	; ld [hl], a
 
 	; Get some debug items.
+	ld hl, wPartyMon2Moves
+	;ld bc, PARTYMON_STRUCT_LENGTH - 4
+	;ld a, FLY
+	ld [hl], FLY
+	; ld d, 5
+	; .outerloop
+		; ld e, 4
+		; .innerloop
+			; ld [hli], a
+			; dec e
+			; jr nz, .innerloop
+		; add hl, bc
+		; dec d
+		; jr nz, .outerloop
+	
+	
 	ld hl, wNumBagItems
 	ld de, DebugNewGameItemsList
 .items_loop

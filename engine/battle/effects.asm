@@ -201,9 +201,9 @@ FreezeBurnParalyzeEffect:
 	and $07 ; drops the retreat cost
 	cp b ; do target type 1 and move type match?
 	ret z  ; return if they match (an ice move can't freeze an ice-type, body slam can't paralyze a normal-type, etc.)
-	ld a, [wEnemyMonType2]
-	cp b ; do target type 2 and move type match?
-	ret z  ; return if they match
+	;ld a, [wEnemyMonType2]
+	;cp b ; do target type 2 and move type match?
+	;ret z  ; return if they match
 	ld a, [wPlayerMoveEffect]
 	cp PARALYZE_SIDE_EFFECT1 + 1
 	ld b, 10 percent + 1
