@@ -2432,8 +2432,8 @@ DisplayBattleMenu::
 	ld [hl], PAD_RIGHT | PAD_A ; wMenuWatchedKeys
 	call HandleMenuInput
 	bit B_PAD_RIGHT, a
-	jr nz, .rightColumn
-	jr .AButtonPressed ; the A button was pressed
+	;jr nz, .rightColumn
+	jr z, .AButtonPressed ; the A button was pressed
 .rightColumn ; put cursor in right column of menu
 	ld a, [wBattleType]
 	cp BATTLE_TYPE_SAFARI
@@ -3330,7 +3330,7 @@ PrintMenuItem:
 	add hl, bc
 	ld a, [hl]
 	;and PP_MASK
-	ld [wBattleMenuCurrentPP], a
+	;ld [wBattleMenuCurrentPP], a
 ; print TYPE/<type> and <curPP>/<maxPP>
 	call GetCurrentMove ; this will update wPlayerMoveType and wPlayerMoveMaxPP variables for us
 	hlcoord 1, 10
@@ -3468,6 +3468,13 @@ PrintMenuItem:
 	and $0f
 	add $F6
 	ld [hl], a
+	; If we have two colored types, they're done. It's if colorless was the first type it didn't actually print something. So this is all in support of Sky-Attack logic
+	push hl
+	hlcoord 2, 11
+	ld a, ' '
+	cp [hl]
+	pop hl
+	jr nz, .prepareToExit ; if we filled something in on this tile, then it must have been a primary color attack
 .noSecondType ; when we return here, we want to pick up the total energy from the colorlesscheck
 	;ld a, [wTempByteValue] ; restore from the colorlesscheck
 	;and a
@@ -3826,8 +3833,8 @@ PlayerCheckIfFlyOrChargeEffect:
 	cp FLY_EFFECT
 	jr z, .playAnim
 	cp CHARGE_EFFECT
-	jr z, .playAnim
-	jr MirrorMoveCheck
+	;jr z, .playAnim
+	jr nz, MirrorMoveCheck
 .playAnim
 	xor a
 	ld [wAnimationType], a
@@ -4113,8 +4120,8 @@ CheckPlayerStatusConditions:
 	cp FLY_EFFECT
 	jr z, .FlyOrChargeEffect
 	cp CHARGE_EFFECT
-	jr z, .FlyOrChargeEffect
-	jr .NotFlyOrChargeEffect
+	;jr z, .FlyOrChargeEffect
+	jr nz, .NotFlyOrChargeEffect
 
 .FlyOrChargeEffect
 	xor a
@@ -5441,9 +5448,11 @@ HandleCounterMove:
 	ld hl, wPlayerMovePower
 	ld a, [wEnemySelectedMove]
 .next
-	cp COUNTER
+	sub COUNTER ; optimization. Whereever this is used, a gets overwritten. sub and cp use the same number of bytes. So the savings is below
+	;cp COUNTER 
 	ret nz ; return if not using Counter
-	ld a, $01
+	;ld a, $01
+	inc a ; fall through here when a = 0 due to the sub instead of the cp, so we can just inc a to $01
 	ld [wMoveMissed], a ; initialize the move missed variable to true (it is set to false below if the move hits)
 	ld a, [de]
 	cp COUNTER
@@ -5678,14 +5687,12 @@ ApplyAttackToEitherPokemon:
 	ldh a, [hWhoseTurn]
 	ld b, a
 	and a
-	ld a, [wEnemyMoveEffect]
-	jr z, .playerTurn
 	ld a, [wPlayerMoveEffect]
+	jr z, .playerTurn
+	ld a, [wEnemyMoveEffect]
 .playerTurn
 	cp OHKO_EFFECT
 	jr z, .ApplyDamageToTarget
-	jr .unity1
-.unity1
 	cp SUPER_FANG_EFFECT
 	jr z, .superFangEffect
 	cp SPECIAL_DAMAGE_EFFECT
@@ -5722,7 +5729,7 @@ ApplyAttackToEitherPokemon:
 	ld [de], a
 	jr .ApplyDamageToTarget
 .specialDamage
-	ld b, a
+	ld a, b
 	and a
 	ld hl, wBattleMonLevel
 	jr z, .playerTurn4
@@ -6147,8 +6154,8 @@ AdjustDamageForMoveType:
 	cp b ; does the move type match type 1 of the attacker?
 	jr z, .sameTypeAttackBonus
 	cp c ; does the move type match type 2 of the attacker?
-	jr z, .sameTypeAttackBonus
-	jr .skipSameTypeAttackBonus
+	;jr z, .sameTypeAttackBonus
+	jr nz, .skipSameTypeAttackBonus
 .sameTypeAttackBonus
 ; if the move type matches one of the attacker's types
 	ld hl, wDamage + 1
@@ -6297,72 +6304,98 @@ MoveHitTest:
 .checkForDigOrFlyStatus
 	bit INVULNERABLE, [hl]
 	jr nz, .moveMissed
-	ldh a, [hWhoseTurn]
-	and a
-	jr nz, .enemyTurn
-; player's turn
-; this checks if the move effect is disallowed by mist
-	ld a, [wPlayerMoveEffect]
-	cp ATTACK_DOWN1_EFFECT
-	jr c, .skipEnemyMistCheck
-	cp HAZE_EFFECT + 1
-	jr c, .enemyMistCheck
-	cp ATTACK_DOWN2_EFFECT
-	jr c, .skipEnemyMistCheck
-	cp REFLECT_EFFECT + 1
-	jr c, .enemyMistCheck
-	jr .skipEnemyMistCheck
-.enemyMistCheck
-; if move effect is from $12 to $19 inclusive or $3a to $41 inclusive
-; i.e. the following moves
-; GROWL, TAIL WHIP, LEER, STRING SHOT, SAND-ATTACK, SMOKESCREEN, KINESIS,
-; FLASH, CONVERSION*, HAZE*, SCREECH, LIGHT SCREEN*, REFLECT*
-; the moves that are marked with an asterisk are not affected since this
-; function is not called when those moves are used
-	ld a, [wEnemyBattleStatus2]
-	bit PROTECTED_BY_MIST, a ; is mon protected by mist?
-	jr nz, .moveMissed
-.skipEnemyMistCheck
-	ld a, [wPlayerBattleStatus2]
-	bit USING_X_ACCURACY, a ; is the player using X Accuracy?
-	ret nz ; if so, always hit regardless of accuracy/evasion
-	jr .calcHitChance
-.enemyTurn
-	ld a, [wEnemyMoveEffect]
-	cp ATTACK_DOWN1_EFFECT
-	jr c, .skipPlayerMistCheck
-	cp HAZE_EFFECT + 1
-	jr c, .playerMistCheck
-	cp ATTACK_DOWN2_EFFECT
-	jr c, .skipPlayerMistCheck
-	cp REFLECT_EFFECT + 1
-	jr c, .playerMistCheck
-	jr .skipPlayerMistCheck
-.playerMistCheck
-; similar to enemy mist check
-	ld a, [wPlayerBattleStatus2]
-	bit PROTECTED_BY_MIST, a ; is mon protected by mist?
-	jr nz, .moveMissed
-.skipPlayerMistCheck
-	ld a, [wEnemyBattleStatus2]
-	bit USING_X_ACCURACY, a ; is the enemy using X Accuracy?
-	ret nz ; if so, always hit regardless of accuracy/evasion
+	; ldh a, [hWhoseTurn]
+	; and a
+	; jr nz, .enemyTurn
+; ; player's turn
+; ; this checks if the move effect is disallowed by mist
+	; ld a, [wPlayerMoveEffect]
+	; cp ATTACK_DOWN1_EFFECT
+	; jr c, .skipEnemyMistCheck
+	; cp HAZE_EFFECT + 1
+	; jr c, .enemyMistCheck
+	; cp ATTACK_DOWN2_EFFECT
+	; jr c, .skipEnemyMistCheck
+	; cp REFLECT_EFFECT + 1
+	; ;jr c, .enemyMistCheck
+	; jr nc, .skipEnemyMistCheck
+; .enemyMistCheck
+; ; if move effect is from $12 to $19 inclusive or $3a to $41 inclusive
+; ; i.e. the following moves
+; ; GROWL, TAIL WHIP, LEER, STRING SHOT, SAND-ATTACK, SMOKESCREEN, KINESIS,
+; ; FLASH, CONVERSION*, HAZE*, SCREECH, LIGHT SCREEN*, REFLECT*
+; ; the moves that are marked with an asterisk are not affected since this
+; ; function is not called when those moves are used
+	; ld a, [wEnemyBattleStatus2]
+	; bit PROTECTED_BY_MIST, a ; is mon protected by mist?
+	; jr nz, .moveMissed
+; .skipEnemyMistCheck
+	; ld a, [wPlayerBattleStatus2]
+	; bit USING_X_ACCURACY, a ; is the player using X Accuracy?
+	; ;ret nz ; if so, always hit regardless of accuracy/evasion
+	; jr .commonGround ; .calcHitChance
+; .enemyTurn
+	; ld a, [wEnemyMoveEffect]
+	; cp ATTACK_DOWN1_EFFECT
+	; jr c, .skipPlayerMistCheck
+	; cp HAZE_EFFECT + 1
+	; jr c, .playerMistCheck
+	; cp ATTACK_DOWN2_EFFECT
+	; jr c, .skipPlayerMistCheck
+	; cp REFLECT_EFFECT + 1
+	; ;jr c, .playerMistCheck
+	; jr nc, .skipPlayerMistCheck
+; .playerMistCheck
+; ; similar to enemy mist check
+	; ld a, [wPlayerBattleStatus2]
+	; bit PROTECTED_BY_MIST, a ; is mon protected by mist?
+	; jr nz, .moveMissed
+; .skipPlayerMistCheck
+	; ld a, [wEnemyBattleStatus2]
+	; bit USING_X_ACCURACY, a ; is the enemy using X Accuracy?
+; .commonGround
+	; ret nz ; if so, always hit regardless of accuracy/evasion
+; .calcHitChance
+ldh a, [hWhoseTurn]
+and a
+ld a, [wPlayerMoveEffect]
+ld hl, wEnemyBattleStatus2
+ld bc, wPlayerBattleStatus2
+jr z, .playerTurn0
+ld a, [wEnemyMoveEffect]
+ld hl, wPlayerBattleStatus2
+ld bc, wEnemyBattleStatus2
+.playerTurn0
+cp ATTACK_DOWN1_EFFECT
+jr c, .skipMistCheck
+cp HAZE_EFFECT + 1
+jr c, .doMistCheck
+cp ATTACK_DOWN2_EFFECT
+jr c, .skipMistCheck
+cp REFLECT_EFFECT + 1
+jr nc, .skipMistCheck
+.doMistCheck
+bit PROTECTED_BY_MIST, [hl]
+jr nz, .moveMissed
+.skipMistCheck
+ld a, [bc]
+bit USING_X_ACCURACY, a
+ret nz
 .calcHitChance
 	call CalcHitChance ; scale the move accuracy according to attacker's accuracy and target's evasion
-	ld a, [wPlayerMoveAccuracy]
-	ld b, a
 	ldh a, [hWhoseTurn]
 	and a
+	ld a, [wPlayerMoveAccuracy]
 	jr z, .doAccuracyCheck
 	ld a, [wEnemyMoveAccuracy]
-	ld b, a
 .doAccuracyCheck
+	ld b, a
 ; if the random number generated is greater than or equal to the scaled accuracy, the move misses
 ; note that this means that even the highest accuracy is still just a 255/256 chance, not 100%
 	call BattleRandom
 	cp b
-	jr nc, .moveMissed
-	ret
+	;jr nc, .moveMissed
+	ret c
 .moveMissed
 	xor a
 	ld hl, wDamage ; zero the damage
@@ -6372,13 +6405,11 @@ MoveHitTest:
 	ld [wMoveMissed], a
 	ldh a, [hWhoseTurn]
 	and a
+	ld hl, wPlayerBattleStatus1
 	jr z, .playerTurn
 ; enemy's turn
 	ld hl, wEnemyBattleStatus1
-	res USING_TRAPPING_MOVE, [hl] ; end multi-turn attack e.g. wrap
-	ret
 .playerTurn
-	ld hl, wPlayerBattleStatus1
 	res USING_TRAPPING_MOVE, [hl] ; end multi-turn attack e.g. wrap
 	ret
 
@@ -6390,15 +6421,14 @@ CalcHitChance:
 	ld a, [wPlayerMonAccuracyMod]
 	ld b, a
 	ld a, [wEnemyMonEvasionMod]
-	ld c, a
 	jr z, .next
 ; values for enemy turn
 	ld hl, wEnemyMoveAccuracy
 	ld a, [wEnemyMonAccuracyMod]
 	ld b, a
 	ld a, [wPlayerMonEvasionMod]
-	ld c, a
 .next
+	ld c, a
 	ld a, $0e
 	sub c
 	ld c, a ; c = 14 - EVASIONMOD (this "reflects" the value over 7, so that an increase in the target's evasion
@@ -6496,8 +6526,8 @@ ExecuteEnemyMove:
 	ld a, [wEnemySelectedMove]
 	ASSERT CANNOT_MOVE == $ff
 	inc a
-	jr z, .ExecuteEnemyMoveDone_LaunchPoint
-	call PrintGhostText
+	;jr z, .ExecuteEnemyMoveDone_LaunchPoint
+	call nz, PrintGhostText
 .ExecuteEnemyMoveDone_LaunchPoint
 	jp z, ExecuteEnemyMoveDone
 	ld a, [wLinkState]
@@ -6631,8 +6661,8 @@ EnemyCheckIfFlyOrChargeEffect:
 	cp FLY_EFFECT
 	jr z, .playAnim
 	cp CHARGE_EFFECT
-	jr z, .playAnim
-	jr EnemyCheckIfMirrorMoveEffect
+	;jr z, .playAnim
+	jr nz, EnemyCheckIfMirrorMoveEffect
 .playAnim
 	xor a
 	ld [wAnimationType], a
@@ -6892,8 +6922,8 @@ CheckEnemyStatusConditions:
 	cp FLY_EFFECT
 	jr z, .flyOrChargeEffect
 	cp CHARGE_EFFECT
-	jr z, .flyOrChargeEffect
-	jr .notFlyOrChargeEffect
+	;jr z, .flyOrChargeEffect
+	jr nz, .notFlyOrChargeEffect
 .flyOrChargeEffect
 	xor a
 	ld [wAnimationType], a
@@ -7010,10 +7040,10 @@ CheckEnemyStatusConditions:
 GetCurrentMove:
 	ldh a, [hWhoseTurn]
 	and a
-	jr z, .player
+	;jr z, .player
 	ld de, wEnemyMoveNum
 	ld a, [wEnemySelectedMove]
-	jr .selected
+	jr nz, .selected
 .player
 	ld de, wPlayerMoveNum
 	; Apply InitBattleVariables to TestBattle.
@@ -7263,37 +7293,21 @@ ApplyBurnAndParalysisPenaltiesToEnemy:
 
 ApplyBurnAndParalysisPenalties:
 	ldh [hWhoseTurn], a
-	call QuarterSpeedDueToParalysis
-	jr HalveAttackDueToBurn
-
+	;call QuarterSpeedDueToParalysis
+	;jr HalveAttackDueToBurn
+	call HalveAttackDueToBurn
+	; then just fall through, save 2 bytes
 QuarterSpeedDueToParalysis:
 	ldh a, [hWhoseTurn]
 	and a
-	jr z, .playerTurn
-; enemy's turn, quarter the player's speed
-	ld a, [wBattleMonStatus]
-	and 1 << PAR
-	ret z ; return if player not paralysed
-	ld hl, wBattleMonSpeed + 1
-	ld a, [hld]
-	ld b, a
-	ld a, [hl]
-	srl a
-	rr b
-	srl a
-	rr b
-	ld [hli], a
-	or b
-	jr nz, .storePlayerSpeed
-	ld b, 1 ; give the player a minimum of at least one speed point
-.storePlayerSpeed
-	ld [hl], b
-	ret
-.playerTurn ; quarter the enemy's speed
 	ld a, [wEnemyMonStatus]
-	and 1 << PAR
-	ret z ; return if enemy not paralysed
 	ld hl, wEnemyMonSpeed + 1
+	jr z, .playerTurn
+	ld a, [wBattleMonStatus]
+	ld hl, wBattleMonSpeed + 1
+.playerTurn
+	and 1 << PAR
+	ret z ; return if pokemon whose turn it is not, is not paralyzed
 	ld a, [hld]
 	ld b, a
 	ld a, [hl]
@@ -7303,38 +7317,23 @@ QuarterSpeedDueToParalysis:
 	rr b
 	ld [hli], a
 	or b
-	jr nz, .storeEnemySpeed
+	jr nz, .storeVictimSpeed
 	ld b, 1 ; give the enemy a minimum of at least one speed point
-.storeEnemySpeed
+.storeVictimSpeed
 	ld [hl], b
 	ret
-
+	
 HalveAttackDueToBurn:
 	ldh a, [hWhoseTurn]
 	and a
-	jr z, .playerTurn
-; enemy's turn, halve the player's attack
-	ld a, [wBattleMonStatus]
-	and 1 << BRN
-	ret z ; return if player not burnt
-	ld hl, wBattleMonAttack + 1
-	ld a, [hld]
-	ld b, a
-	ld a, [hl]
-	srl a
-	rr b
-	ld [hli], a
-	or b
-	jr nz, .storePlayerAttack
-	ld b, 1 ; give the player a minimum of at least one attack point
-.storePlayerAttack
-	ld [hl], b
-	ret
-.playerTurn ; halve the enemy's attack
 	ld a, [wEnemyMonStatus]
-	and 1 << BRN
-	ret z ; return if enemy not burnt
 	ld hl, wEnemyMonAttack + 1
+	jr z, .playerTurn
+	ld a, [wBattleMonStatus]
+	ld hl, wBattleMonAttack + 1
+.playerTurn
+	and 1 << BRN
+	ret z ; return if the potential victim is not burnt
 	ld a, [hld]
 	ld b, a
 	ld a, [hl]
@@ -7342,11 +7341,13 @@ HalveAttackDueToBurn:
 	rr b
 	ld [hli], a
 	or b
-	jr nz, .storeEnemyAttack
-	ld b, 1 ; give the enemy a minimum of at least one attack point
-.storeEnemyAttack
+	jr nz, .storeVictimAttack
+	ld b, 1
+.storeVictimAttack
 	ld [hl], b
 	ret
+	
+
 
 CalculateModifiedStats:
 	ld c, 0

@@ -39,7 +39,7 @@ push de
 	
 .linkBattle1
 	ld a, 1
-	ldh a, [hWhoseTurn]
+	ldh [hWhoseTurn], a
 	xor a
 	ld hl, wEnemyMonPP
 	ld [hli], a
@@ -65,7 +65,7 @@ push de
 	
 	pop de
 	xor a
-	ldh a, [hWhoseTurn] ; reset this with the Priming shenanigans
+	ldh [hWhoseTurn], a ; reset this with the Priming shenanigans
 	ld hl, wCanEvolveFlags
 	ld b, wMiscBattleDataEnd - wMiscBattleData
 .loop
